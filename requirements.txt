@@ -1,0 +1,32 @@
+# Kern: Modellzugang und Orchestrierung
+langchain==1.4.0
+langchain-openai==1.6.2
+langgraph==1.2.11
+openai==3.14.0
+python-dotenv==1.2.3
+
+# Notebook-Kernel: nötig, um die Notebooks lokal in PyCharm oder Jupyter zu starten
+ipykernel==7.3.0
+
+# Woche 6: Tools und MCP
+langchain-mcp-adapters==0.3.2
+mcp==1.30.0
+ddgs==9.16.0
+
+# Woche 7: Retrieval (Embeddings lokal über sentence-transformers)
+langchain-huggingface==1.2.2
+langchain-community==0.4.2
+pypdf==6.18.1
+bs4==0.0.2
+unstructured==0.27.6
+faiss-cpu==1.15.0
+rank_bm25==0.2.2
+sentence-transformers==6.0.1
+
+# Woche 9: Oberfläche
+gradio==6.27.0
+ipywidgets==8.1.9
+
+# Notebook 00: weitere Anbieter in der Übersicht
+google-genai==2.23.0
+langchain-cerebras==0.8.2
