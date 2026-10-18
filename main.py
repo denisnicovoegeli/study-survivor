@@ -7,6 +7,7 @@ from langchain.messages import AIMessage, AnyMessage, HumanMessage, SystemMessag
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
 from pathlib import Path
 
 load_dotenv()
@@ -38,7 +39,7 @@ Antwortstil: Sprich die Person mit «du» an, antworte in der Sprache der Frage,
 Kennzeichnung: Du bist ein Prototyp aus einem Studienprojekt, kein offizieller Dienst der FHNW. Termine können sich ändern, verbindlich ist der offizielle Prüfungsplan."""
 
 CLASSIFY_PROMPT = """Entscheide, ob eine Frage zu einem Studienassistenten gehört, und bestimme ihr Thema.
-Zuständig: Prüfungstermine, Prüfungszeiten und -orte, Anmeldefristen für Prüfungen, Fragen an den Assistenten.
+Zuständig: Prüfungstermine, Prüfungszeiten und -orte, Anmeldefristen für Prüfungen, Fragen an den Assistenten selbst, z.B. "Was kannst du?", "Wobei kannst du mir helfen?".
 Nicht zuständig: Inhalte und Lernstoff der Module, Noten, Stundenplan, Organisatorisches ausserhalb von Prüfungen und alles andere."""
 
 EXAMS = {
@@ -136,7 +137,7 @@ responder = llm.with_structured_output(AgentResponse, method="json_schema")
 
 def classify(state: AgentState):
     """Prüft, ob die letzte Frage zum Zuständigkeitsbereich gehört, und bestimmt ihr Thema."""
-    result = classifier.invoke([SystemMessage(content=CLASSIFY_PROMPT), state["messages"][-1]])
+    result = classifier.invoke([SystemMessage(content=CLASSIFY_PROMPT)] + state["messages"][-6:])
     return {"in_scope": result.in_scope, "category": result.category}
 
 
@@ -186,14 +187,16 @@ def build_graph():
     builder.add_conditional_edges("answer", route_after_answer, ["tools", "respond"])
     builder.add_edge("tools", "answer")
     builder.add_edge("respond", END)
-    return builder.compile()
+    return builder.compile(checkpointer=InMemorySaver())
 
 
 graph = build_graph()
 
 
-def ask(question):
-    return graph.invoke({"messages": [HumanMessage(content=question)]})["response"].answer
+def ask(question, thread_id="default"):
+    config = {"configurable": {"thread_id": thread_id}}
+    result = graph.invoke({"messages": [HumanMessage(content=question)]}, config)
+    return result["response"].answer
 
 #print(ask("Wann ist die Prüfung für Deep Learning?"))
 
@@ -201,6 +204,19 @@ def ask(question):
 #Path("graph.png").write_bytes(png)
 #print("Graph gespeichert in graph.png")
 
-user_input = input("Stelle eine Frage zu den BAI Prüfungen: ")
-response = ask(user_input)
-print("Antwort:", response)
+def chat():
+    thread_id = "silian"
+    print("Willkommen beim Studienassistenten. Stelle deine Frage zu den BAI Prüfungen an der FHNW. Beende das Gespräch mit 'exit'.")
+    while True:
+        try:
+            user_input = input("Du: ")
+            if user_input.lower() == "exit":
+                print("Auf Wiedersehen!")
+                break
+            answer = ask(user_input, thread_id=thread_id)
+            print("Assistent:", answer)
+        except Exception as e:
+            print("Fehler:", e)
+
+if __name__ == "__main__":
+    chat()
