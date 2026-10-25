@@ -1,4 +1,4 @@
-import operator, os
+import operator, os, subprocess
 from typing import Literal
 from typing_extensions import Annotated, TypedDict
 from dotenv import load_dotenv
@@ -8,7 +8,11 @@ from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.prebuilt import ToolNode
+from langchain.tools import ToolRuntime
 from pathlib import Path
+from google.cloud import texttospeech
+from langchain_google_community import TextToSpeechTool
 
 load_dotenv()
 
@@ -36,11 +40,14 @@ SYSTEM_PROMPT = """Du bist ein Studienassistent für Studierende der FHNW und be
 Fakten: Schlage Prüfungstermine immer mit exam_lookup nach. Erfinde nichts, weder Daten noch Uhrzeiten, Räume oder Prüfungsformen. Liefert das Tool nichts, sag das offen und verweise auf den offiziellen Prüfungsplan der FHNW.
 Fehlt eine Angabe (z. B. welches Modul), frage nach.
 Antwortstil: Sprich die Person mit «du» an, antworte in der Sprache der Frage, höchstens vier Sätze. Nenne Datum, Uhrzeit und Ort, wenn vorhanden, und bei mehreren Terminen eine kurze Aufzählung nach Datum sortiert.
+Wenn die Person möchte, dass etwas vorgelesen wird, rufe speak mit dem Antworttext auf.
+Antworte danach kurz, dass du es vorgelesen hast.
 Kennzeichnung: Du bist ein Prototyp aus einem Studienprojekt, kein offizieller Dienst der FHNW. Termine können sich ändern, verbindlich ist der offizielle Prüfungsplan."""
 
 CLASSIFY_PROMPT = """Entscheide, ob eine Frage zu einem Studienassistenten gehört, und bestimme ihr Thema.
 Zuständig: Prüfungstermine, Prüfungszeiten und -orte, Anmeldefristen für Prüfungen, Fragen an den Assistenten selbst, z.B. "Was kannst du?", "Wobei kannst du mir helfen?".
-Nicht zuständig: Inhalte und Lernstoff der Module, Noten, Stundenplan, Organisatorisches ausserhalb von Prüfungen und alles andere."""
+Nicht zuständig: Inhalte und Lernstoff der Module, Noten, Stundenplan, Organisatorisches ausserhalb von Prüfungen und alles andere.
+- Bitten, eine Antwort vorzulesen, z. B. «Lies mir das vor»"""
 
 EXAMS = {
     "managementorientierte betriebswirtschaftslehre": [
@@ -86,13 +93,20 @@ EXAMS = {
     ],
 }
 
+DATE_KEYS = ["datum", "wochentag", "zeit", "klasse"]
 
 @tool
-def exam_lookup(modul: str) -> str:
-    """Schlägt Datum, Uhrzeit und Ort einer Prüfung nach. Gibt eine kurze Aufzählung zurück, wenn es mehrere Termine gibt.
+def exam_lookup(modul: str, runtime: ToolRuntime) -> str:
+    """Schlägt die Prüfungstermine eines BAI-Moduls nach.
 
-    Liefert alle Termine des Moduls (z.B. getrennt für VZ und TZ).
-    Mögliche Module: siehe Schlüssel der Prüfungstabelle.
+    Liefert Datum, Wochentag, Zeit, Dauer, Prüfungsform, Klasse (VZ/TZ) und Dozierende.
+    Bei mehreren Terminen (z. B. VZ und TZ) kommt eine Zeile pro Termin.
+    Der Plan enthält keinen Prüfungsort.
+    Mögliche Module: Managementorientierte Betriebswirtschaftslehre, Deep Learning,
+    Generative KI & Agentensysteme, Cyber Security, Entrepreneurship,
+    Einführung in die Künstliche Intelligenz, Statistik & Mathematik für maschinelles Lernen,
+    Mensch-KI-Interaktion und Automation, Unternehmensfinanzierung,
+    Geschäftsprozess-Management & -Automation, Wissensmanagement und organisationales Lernen.
     """
     q = modul.strip().lower()
     matches = [k for k in EXAMS if q in k or k in q]
@@ -101,12 +115,33 @@ def exam_lookup(modul: str) -> str:
     lines = []
     for k in matches:
         for t in EXAMS[k]:
-            dauer = f"{t['dauer_min']} min" if t["dauer_min"] else "Dauer unbekannt"
-            lines.append(f"{k.title()}: {t['datum']} ({t['wochentag']}), {t['zeit']}, {dauer}, {t['form']}, Klasse: {t['klasse']}, Dozierende: {t['dozierende']}")
+            if runtime.state["category"] == "exam_date":
+                t = {f: v for f, v in t.items() if f in DATE_KEYS}
+            lines.append(f"{k.title()}: " + ", ".join(f"{f}: {v}" for f, v in t.items() if v is not None))
     return "\n".join(lines)
 
+print("Das Modell sieht nur:", list(exam_lookup.tool_call_schema.model_json_schema()["properties"]))
 
-tools = [exam_lookup]
+@tool
+def speak(text: str) -> str:
+    """Liest einen Text auf Deutsch vor und spielt ihn ab.
+
+    Nur verwenden, wenn die Person ausdrücklich möchte, dass etwas vorgelesen wird.
+    Übergib den vollständigen Text, der vorgelesen werden soll.
+    """
+    tts = TextToSpeechTool.model_construct() 
+    tts._client = texttospeech.TextToSpeechClient(
+        client_options={"api_key": os.environ["GOOGLE_TTS_API_KEY"]}
+    )
+    path = tts._run(input_text=text.replace("*", ""), language_code="de-DE")
+    try:
+        subprocess.run(["afplay", path])
+    finally:
+        os.remove(path)
+    return "Der Text wurde vorgelesen."
+
+
+tools = [exam_lookup, speak]
 tools_by_name = {t.name: t for t in tools}
 llm_with_tools = llm.bind_tools(tools)
 
@@ -150,14 +185,15 @@ def reject(state: AgentState):
 def answer(state: AgentState):
     return {"messages": [llm_with_tools.invoke([SystemMessage(content=SYSTEM_PROMPT)] + state["messages"])]}
 
+tool_node = ToolNode(tools)
+
 
 def call_tools(state: AgentState):
-    tool_calls = state["messages"][-1].tool_calls
-    results = []
-    for tool_call in tool_calls:
-        result = tools_by_name[tool_call["name"]].invoke(tool_call["args"])
-        results.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
-    return {"messages": results, "tools_used": [c["name"] for c in tool_calls]}
+    """Führt die angeforderten Werkzeuge mit dem fertigen ToolNode aus."""
+    result = tool_node.invoke(state)
+    tool_names = [c["name"] for c in state["messages"][-1].tool_calls]
+    return {"messages": result["messages"], "tools_used": tool_names}
+
 
 
 def respond(state: AgentState):
@@ -204,7 +240,7 @@ def ask(question, thread_id="default"):
 #Path("graph.png").write_bytes(png)
 #print("Graph gespeichert in graph.png")
 
-def chat():
+#def chat():
     thread_id = "silian"
     print("Willkommen beim Studienassistenten. Stelle deine Frage zu den BAI Prüfungen an der FHNW. Beende das Gespräch mit 'exit'.")
     while True:
@@ -218,5 +254,15 @@ def chat():
         except Exception as e:
             print("Fehler:", e)
 
-if __name__ == "__main__":
-    chat()
+#if __name__ == "__main__":
+    #chat()
+
+
+#result = graph.invoke({"messages": [HumanMessage(content="wann findet die Prüfung in Deep Learning statt?")]}, {"configurable": {"thread_id": "test"}})
+#print("tools_used:", result["tools_used"])
+#print(result["response"].answer)
+
+#print(speak.invoke({"text": "Hallo, ich bin dein Studienassistent. Die Prüfung in Cyber Security findet am zwölften Januar statt."}))
+
+print(ask("Wann findet die erste Prüfung statt?", thread_id="t1"))
+print(ask("Lies mir das bitte vor.", thread_id="t1"))
