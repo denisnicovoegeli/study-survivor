@@ -13,6 +13,8 @@ from langchain.tools import ToolRuntime
 from pathlib import Path
 from google.cloud import texttospeech
 from langchain_google_community import TextToSpeechTool
+from rag import search_documents
+from exams import load_exams
 
 load_dotenv()
 
@@ -36,64 +38,29 @@ llm = ChatOpenAI(
     temperature=0,
 )
 
-SYSTEM_PROMPT = """Du bist ein Studienassistent für Studierende der FHNW und beantwortest Fragen zu ihren Prüfungsterminen.
-Fakten: Schlage Prüfungstermine immer mit exam_lookup nach. Erfinde nichts, weder Daten noch Uhrzeiten, Räume oder Prüfungsformen. Liefert das Tool nichts, sag das offen und verweise auf den offiziellen Prüfungsplan der FHNW.
+SYSTEM_PROMPT = """Du bist ein Studienassistent für Studierende der FHNW und beantwortest Fragen zu ihren Prüfungsterminen und zu Vorlesungsinhalten.
+
+Prüfungstermine: Schlage Prüfungstermine immer mit exam_lookup nach. Erfinde nichts, weder Daten noch Uhrzeiten, Räume oder Prüfungsformen. Liefert das Tool nichts, sag das offen und verweise auf den offiziellen Prüfungsplan der FHNW.
+Vorlesungsinhalte: Fragen zu Inhalten, Lernzielen, Begriffen oder Organisatorischem eines Moduls suchst du mit search_documents (Vorlesungsfolien). Formuliere die Suchanfrage als konkrete Stichwörter, nicht als ganze Frage, zum Beispiel «Lernziele Grundbausteine neuronale Netze» statt «Was sind die Ziele?». Antworte nur auf Basis der gefundenen Folien und nenne die Quelle (Modul, Folie). Beantworten die Treffer die Frage nicht, sag offen, dass es nicht in den Folien steht. Ergänze kein eigenes Wissen als Folieninhalt.
+Abgrenzung: Termine kommen nur aus exam_lookup, Inhalte nur aus search_documents. Bei Fragen, die beides betreffen, nutze beide Werkzeuge.
 Fehlt eine Angabe (z. B. welches Modul), frage nach.
-Antwortstil: Sprich die Person mit «du» an, antworte in der Sprache der Frage, höchstens vier Sätze. Nenne Datum, Uhrzeit und Ort, wenn vorhanden, und bei mehreren Terminen eine kurze Aufzählung nach Datum sortiert.
+Antwortstil: Sprich die Person mit «du» an, antworte in der Sprache der Frage, höchstens vier Sätze. Nenne bei Terminen Datum, Uhrzeit und Ort, wenn vorhanden, und bei mehreren Terminen eine kurze Aufzählung nach Datum sortiert.
 Wenn die Person möchte, dass etwas vorgelesen wird, rufe speak mit dem Antworttext auf.
 Antworte danach kurz, dass du es vorgelesen hast.
 Kennzeichnung: Du bist ein Prototyp aus einem Studienprojekt, kein offizieller Dienst der FHNW. Termine können sich ändern, verbindlich ist der offizielle Prüfungsplan."""
 
 CLASSIFY_PROMPT = """Entscheide, ob eine Frage zu einem Studienassistenten gehört, und bestimme ihr Thema.
-Zuständig: Prüfungstermine, Prüfungszeiten und -orte, Anmeldefristen für Prüfungen, Fragen an den Assistenten selbst, z.B. "Was kannst du?", "Wobei kannst du mir helfen?".
-Nicht zuständig: Inhalte und Lernstoff der Module, Noten, Stundenplan, Organisatorisches ausserhalb von Prüfungen und alles andere.
-- Bitten, eine Antwort vorzulesen, z. B. «Lies mir das vor»"""
+Zuständig:
+- Prüfungstermine, Prüfungszeiten und -orte, Anmeldefristen für Prüfungen
+- Inhalte und Lernstoff der Module (Begriffe, Konzepte, Lernziele, Themen der Vorlesungen)
+- Organisatorisches eines Moduls, z.B. Leistungsnachweis, Prüfungsform, Aufbau der Lektionen
+- Fragen an den Assistenten selbst, z.B. "Was kannst du?", "Wobei kannst du mir helfen?"
+- Bitten, eine Antwort vorzulesen, z. B. «Lies mir das vor»
+Nicht zuständig: Noten, Stundenplan, Organisatorisches ausserhalb der Module und alles andere."""
 
-EXAMS = {
-    "managementorientierte betriebswirtschaftslehre": [
-        {"datum": "06.01.2027", "wochentag": "Mittwoch",   "zeit": "08:00 - 20:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ-26", "dozierende": "Hofstetter Charlotte; Köpfli Corinne"},
-        {"datum": "07.01.2027", "wochentag": "Donnerstag", "zeit": "08:00 - 20:00", "dauer_min": None, "form": "mündlich", "klasse": "TZ-25", "dozierende": "Hofstetter Charlotte; Köpfli Corinne"},
-        {"datum": "08.01.2027", "wochentag": "Freitag",    "zeit": "08:00 - 20:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ-26", "dozierende": "Hofstetter Charlotte; Köpfli Corinne"},
-        {"datum": "08.01.2027", "wochentag": "Freitag",    "zeit": "08:00 - 20:00", "dauer_min": None, "form": "mündlich", "klasse": "TZ-25", "dozierende": "Hofstetter Charlotte; Köpfli Corinne"},
-    ],
-    "deep learning": [
-        {"datum": "09.01.2027", "wochentag": "Samstag", "zeit": "09:00 - 10:00", "dauer_min": 60, "form": "schriftlich", "klasse": "VZ + TZ ab 3", "dozierende": "Suter Yannick"},
-    ],
-    "generative ki & agentensysteme": [
-        {"datum": "11.01.2027", "wochentag": "Montag",   "zeit": "08:15 - 21:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ + TZ", "dozierende": "Martin Andreas; Schwander Sandro"},
-        {"datum": "12.01.2027", "wochentag": "Dienstag", "zeit": "08:15 - 21:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ + TZ", "dozierende": "Martin Andreas; Schwander Sandro"},
-    ],
-    "cyber security": [
-        {"datum": "12.01.2027", "wochentag": "Dienstag", "zeit": "14:00 - 15:30", "dauer_min": 90, "form": "schriftlich", "klasse": "VZ + TZ", "dozierende": "Grieder Hermann; Moriggl Pascal"},
-    ],
-    "entrepreneurship": [
-        {"datum": "13.01.2027", "wochentag": "Mittwoch", "zeit": "08:00 - 18:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ + TZ", "dozierende": "Metuzale Kristine"},
-    ],
-    "einführung in die künstliche intelligenz": [
-        {"datum": "13.01.2027", "wochentag": "Mittwoch", "zeit": "09:00 - 10:30", "dauer_min": 90, "form": "schriftlich", "klasse": "VZ-26", "dozierende": "Hinkelmann Knut; Renold Manuel; Bargas Javier"},
-        {"datum": "13.01.2027", "wochentag": "Mittwoch", "zeit": "09:00 - 10:30", "dauer_min": 90, "form": "schriftlich", "klasse": "TZ-26", "dozierende": "Hinkelmann Knut; Renold Manuel; Bargas Javier"},
-    ],
-    "statistik & mathematik für maschinelles lernen": [
-        {"datum": "15.01.2027", "wochentag": "Freitag", "zeit": "14:00 - 16:00", "dauer_min": 120, "form": "schriftlich", "klasse": "VZ-26", "dozierende": "Miller Barbara; Heimsch Thomas; Müller Roman"},
-        {"datum": "15.01.2027", "wochentag": "Freitag", "zeit": "14:00 - 16:00", "dauer_min": 120, "form": "schriftlich", "klasse": "TZ-26", "dozierende": "Miller Barbara; Heimsch Thomas; Müller Roman"},
-    ],
-    "mensch-ki-interaktion und automation": [
-        {"datum": "19.01.2027", "wochentag": "Dienstag", "zeit": "08:30 - 17:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ + TZ", "dozierende": "Wäfler Toni; Zinsli Patrick; Sonderegger Andreas"},
-        {"datum": "20.01.2027", "wochentag": "Mittwoch", "zeit": "08:30 - 17:00", "dauer_min": None, "form": "mündlich", "klasse": "VZ + TZ", "dozierende": "Wäfler Toni; Zinsli Patrick; Sonderegger Andreas"},
-    ],
-    "unternehmensfinanzierung": [
-        {"datum": "19.01.2027", "wochentag": "Dienstag", "zeit": "11:00 - 12:00", "dauer_min": 60, "form": "schriftlich", "klasse": "VZ + TZ", "dozierende": "Graef Frank; Kröncke Tim"},
-    ],
-    "geschäftsprozess-management & -automation": [
-        {"datum": "20.01.2027", "wochentag": "Mittwoch", "zeit": "09:00 - 10:30", "dauer_min": 90, "form": "schriftlich", "klasse": "VZ-26", "dozierende": "Spahic Maja; Kostic Milan; Yasar Selim; Felice Eliana"},
-        {"datum": "20.01.2027", "wochentag": "Mittwoch", "zeit": "09:00 - 10:30", "dauer_min": 90, "form": "schriftlich", "klasse": "TZ-25", "dozierende": "Spahic Maja; Kostic Milan; Yasar Selim; Felice Eliana"},
-    ],
-    "wissensmanagement und organisationales lernen": [
-        {"datum": "23.01.2027", "wochentag": "Samstag", "zeit": "11:30 - 12:30", "dauer_min": 60, "form": "schriftlich", "klasse": "VZ + TZ", "dozierende": "Witschel Hans Friedrich"},
-    ],
-}
 
 DATE_KEYS = ["datum", "wochentag", "zeit", "klasse"]
+
 
 @tool
 def exam_lookup(modul: str, runtime: ToolRuntime) -> str:
@@ -109,12 +76,13 @@ def exam_lookup(modul: str, runtime: ToolRuntime) -> str:
     Geschäftsprozess-Management & -Automation, Wissensmanagement und organisationales Lernen.
     """
     q = modul.strip().lower()
-    matches = [k for k in EXAMS if q in k or k in q]
+    exams = load_exams()
+    matches = [k for k in exams if q in k or k in q]
     if not matches:
         return f"Keine Prüfungstermine gefunden für '{modul}'. Bitte prüfe die Schreibweise oder den offiziellen Prüfungsplan der FHNW."
     lines = []
     for k in matches:
-        for t in EXAMS[k]:
+        for t in exams[k]:
             if runtime.state["category"] == "exam_date":
                 t = {f: v for f, v in t.items() if f in DATE_KEYS}
             lines.append(f"{k.title()}: " + ", ".join(f"{f}: {v}" for f, v in t.items() if v is not None))
@@ -141,7 +109,7 @@ def speak(text: str) -> str:
     return "Der Text wurde vorgelesen."
 
 
-tools = [exam_lookup, speak]
+tools = [exam_lookup, search_documents, speak]
 tools_by_name = {t.name: t for t in tools}
 llm_with_tools = llm.bind_tools(tools)
 
@@ -149,7 +117,7 @@ llm_with_tools = llm.bind_tools(tools)
 class Classification(BaseModel):
     reason: str = Field(description="Begründung in einem Satz")
     in_scope: bool = Field(description="True, wenn die Frage in den Zuständigkeitsbereich fällt")
-    category: Literal["exam_date", "exam_info", "other"] = Field(description="Thema der Frage")
+    category: Literal["exam_date", "exam_info", "content", "other"] = Field(description="Thema der Frage")
 
 
 class AgentResponse(BaseModel):
@@ -177,7 +145,7 @@ def classify(state: AgentState):
 
 
 def reject(state: AgentState):
-    text = "Dabei kann ich leider nicht helfen. Ich beantworte nur Fragen zun den BAI Prüfungen an der FHNW."
+    text = "Dabei kann ich leider nicht helfen. Ich beantworte nur Fragen zu den BAI Prüfungen an der FHNW."
     return {"messages": [AIMessage(content=text)],
             "response": AgentResponse(answer=text, exams=None, needs_human=False)}
 
@@ -240,7 +208,7 @@ def ask(question, thread_id="default"):
 #Path("graph.png").write_bytes(png)
 #print("Graph gespeichert in graph.png")
 
-#def chat():
+def chat():
     thread_id = "silian"
     print("Willkommen beim Studienassistenten. Stelle deine Frage zu den BAI Prüfungen an der FHNW. Beende das Gespräch mit 'exit'.")
     while True:
@@ -254,8 +222,8 @@ def ask(question, thread_id="default"):
         except Exception as e:
             print("Fehler:", e)
 
-#if __name__ == "__main__":
-    #chat()
+if __name__ == "__main__":
+    chat()
 
 
 #result = graph.invoke({"messages": [HumanMessage(content="wann findet die Prüfung in Deep Learning statt?")]}, {"configurable": {"thread_id": "test"}})
@@ -264,5 +232,5 @@ def ask(question, thread_id="default"):
 
 #print(speak.invoke({"text": "Hallo, ich bin dein Studienassistent. Die Prüfung in Cyber Security findet am zwölften Januar statt."}))
 
-print(ask("Wann findet die erste Prüfung statt?", thread_id="t1"))
-print(ask("Lies mir das bitte vor.", thread_id="t1"))
+#print(ask("Kannst du Bilder verarbeiten?", thread_id="t1"))
+#print(ask("Lies mir das bitte vor.", thread_id="t1"))

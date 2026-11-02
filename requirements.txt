@@ -32,3 +32,7 @@ google-genai==2.23.0
 langchain-cerebras==0.8.2
 
 langchain-google-community[texttospeech]
+langchain-chroma
+
+pandas
+openpyxl
