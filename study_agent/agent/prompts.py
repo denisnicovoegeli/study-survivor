@@ -29,7 +29,10 @@ wie ein guter Tutor.
 CLASSIFY_PROMPT = """\
 Ordne die letzte Nachricht des Studenten ein. Zuständig (in_scope=true) ist der Agent für alles rund ums
 Studium an der FHNW: Termine und Fristen, Inhalte der Kurse, Prüfungsvorbereitung, Organisation von Kursen
-und Projekten, Rückfragen zu einer früheren Antwort.
+und Projekten, Rückfragen zu einer früheren Antwort. Fachfragen zu Themen der aktuellen Kurse sind immer
+zuständig, auch wenn kein Kurs genannt wird (z. B. "Was ist Backpropagation?").
+Aktuelle Kurse: {kurse}
+Im Zweifel zuständig: lieber eine Frage beantworten als eine Studienfrage ablehnen.
 
 Nicht zuständig (in_scope=false):
 - Themen ohne Bezug zum Studium (Wetter, Kochrezepte, Sport, allgemeines Weltgeschehen).

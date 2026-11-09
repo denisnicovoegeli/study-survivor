@@ -1,0 +1,99 @@
+/* upload.css: Stile fuer den Ordner-Upload-Dialog */
+
+.stu-upload-dropzone {
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  padding: 28px 16px;
+  text-align: center;
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.stu-upload-dropzone.is-dragover {
+  border-color: var(--acc);
+  background: var(--acc-soft);
+}
+
+.stu-upload-dropzone-icon {
+  width: 40px;
+  height: 40px;
+  color: var(--acc);
+  opacity: 0.85;
+}
+
+.stu-upload-dropzone-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.stu-upload-dropzone-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stu-upload-filelist {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stu-upload-fileitem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--surface);
+}
+
+.stu-upload-fileitem.is-skipped {
+  opacity: 0.6;
+}
+
+.stu-upload-filepath {
+  font-family: var(--font-mono, monospace);
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stu-upload-filesize {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.stu-upload-tag-skipped {
+  color: #c53030;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stu-upload-summary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  padding: 4px 2px;
+  color: var(--muted);
+}
+
+.stu-upload-size-warn {
+  color: #c53030;
+  font-weight: 600;
+}

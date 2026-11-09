@@ -1,0 +1,1112 @@
+/* plan.css: Stile fuer Kalender, Kanban, Uebersicht, Projekte und Suche */
+
+/* -------------------------------------------------------------------------
+   Gemeinsame Ansicht-Elemente
+   ------------------------------------------------------------------------- */
+
+.stu-viewh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  flex-wrap: wrap;
+  flex: none;
+}
+
+.stu-viewh h2 {
+  margin: 0;
+  font: 600 22px/1.2 "Newsreader", Georgia, serif;
+  color: var(--fg);
+}
+
+.stu-viewh-desc {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.stu-view-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+}
+
+.stu-tbtn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  background: var(--surface);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.stu-tbtn:hover {
+  color: var(--fg);
+  background: var(--raise);
+  border-color: var(--line);
+}
+
+.stu-tbtn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 1px;
+}
+
+.stu-tbtn.is-pri {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: var(--acc);
+}
+
+.stu-tbtn.is-pri:hover {
+  filter: brightness(1.08);
+}
+
+.stu-tbtn.is-on {
+  color: var(--acc);
+  border-color: var(--acc);
+  background: var(--acc-soft);
+}
+
+.stu-tbtn.is-danger {
+  color: #d33;
+}
+
+.stu-tbtn.is-danger:hover {
+  background: rgba(220, 50, 50, 0.12);
+  border-color: rgba(220, 50, 50, 0.3);
+}
+
+.stu-error-box {
+  background: rgba(220, 50, 50, 0.08);
+  border: 1px solid rgba(220, 50, 50, 0.28);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.stu-empty-box {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  background: var(--surface);
+}
+
+/* -------------------------------------------------------------------------
+   Kalender
+   ------------------------------------------------------------------------- */
+
+.stu-cal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface);
+}
+
+.stu-cal-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid var(--line);
+}
+
+.stu-month {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.stu-dow {
+  background: var(--bg);
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  user-select: none;
+}
+
+.stu-day {
+  background: var(--surface);
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 84px;
+  min-width: 0;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.stu-day:hover {
+  background: var(--raise);
+}
+
+.stu-day.is-out {
+  background: var(--bg);
+  opacity: 0.72;
+}
+
+.stu-day.is-out .stu-dnum {
+  opacity: 0.45;
+}
+
+.stu-dnum {
+  font: 600 11.5px "IBM Plex Mono", monospace;
+  color: var(--muted);
+  padding: 2px 4px;
+  align-self: flex-start;
+  border-radius: 5px;
+}
+
+.stu-day.is-today .stu-dnum {
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-weight: 700;
+}
+
+.stu-day.is-selected {
+  box-shadow: inset 0 0 0 2px var(--acc);
+}
+
+.stu-ev {
+  font-size: 11px;
+  line-height: 1.3;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: hsl(var(--h, 220) 70% 50% / 0.14);
+  color: var(--fg);
+  border-left: 3px solid hsl(var(--h, 220) 65% 50%);
+  user-select: none;
+}
+
+.stu-ev.is-bold {
+  font-weight: 700;
+}
+
+.stu-more {
+  font-size: 10.5px;
+  color: var(--muted);
+  padding-left: 4px;
+}
+
+/* Agenda / Als Naechstes */
+.stu-agenda {
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 14px 16px 60px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.stu-agenda-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stu-agi {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.stu-agd {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: 4px 0;
+  border-radius: 6px;
+  background: var(--raise);
+  text-align: center;
+}
+
+.stu-agd b {
+  font: 700 16px/1.1 "IBM Plex Mono", monospace;
+  color: var(--fg);
+}
+
+.stu-agd span {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.stu-agt {
+  font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--fg);
+}
+
+.stu-ags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  margin-top: 3px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.stu-cdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: hsl(var(--h, 220) 65% 50%);
+  flex: none;
+}
+
+.stu-src-ref {
+  font: 10px "IBM Plex Mono", monospace;
+  color: var(--muted);
+  opacity: 0.85;
+  margin-top: 3px;
+}
+
+/* -------------------------------------------------------------------------
+   Kanban
+   ------------------------------------------------------------------------- */
+
+.stu-board {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface);
+  container-type: inline-size;
+}
+
+.stu-cols {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(170px, 1fr));
+  gap: 10px;
+  padding: 14px 16px 50px;
+  overflow-y: hidden;
+  overflow-x: auto;
+  min-height: 0;
+  background: var(--bg);
+  scrollbar-width: thin;
+}
+
+.stu-cols::-webkit-scrollbar {
+  height: 8px;
+}
+
+.stu-cols::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.stu-cols::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+
+.stu-cols::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.stu-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.stu-col.is-sugg {
+  background: transparent;
+  border-style: dashed;
+}
+
+.stu-col.is-dragover {
+  border-color: var(--acc);
+  background: var(--acc-soft);
+}
+
+.stu-col-head {
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 12px 12px 0 0;
+}
+
+.stu-col-count {
+  font: 600 11px "IBM Plex Mono", monospace;
+  color: var(--muted);
+  background: var(--raise);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: auto;
+}
+
+.stu-cards {
+  overflow-y: auto;
+  padding: 10px;
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  flex: 1;
+  min-height: 80px;
+}
+
+.stu-kcard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-top: 3px solid hsl(var(--h, 220) 65% 50%);
+  cursor: grab;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s ease;
+}
+
+.stu-kcard:active {
+  cursor: grabbing;
+}
+
+.stu-kcard.is-dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+}
+
+.stu-kk {
+  font: 600 10.5px "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stu-kt {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  color: var(--fg);
+}
+
+.stu-ksub {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.stu-knote {
+  font-size: 11.5px;
+  color: var(--muted);
+  background: var(--raise);
+  padding: 4px 7px;
+  border-radius: 5px;
+  white-space: pre-wrap;
+  margin-top: 2px;
+}
+
+.stu-kdue {
+  font: 11px "IBM Plex Mono", monospace;
+  color: var(--warn);
+}
+
+.stu-kacts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.stu-kacts button {
+  all: unset;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--acc);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--acc-soft);
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.stu-kacts button:hover {
+  background: var(--acc);
+  color: var(--acc-ink);
+}
+
+.stu-kdel {
+  margin-left: auto;
+  color: var(--muted) !important;
+  background: transparent !important;
+  font-size: 14px !important;
+  padding: 0 4px !important;
+}
+
+.stu-kdel:hover {
+  color: #d33 !important;
+  background: rgba(220, 50, 50, 0.12) !important;
+}
+
+.stu-kempty {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 24px 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Modal Dialog */
+.stu-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.stu-modal {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+}
+
+/* Kalender: Fehlermeldung im Termin-Fenster */
+.stu-modal-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(192, 57, 43, 0.45);
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--fg);
+  font-size: 12.5px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.stu-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stu-modal-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.stu-modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.stu-form-group {
+  display: grid;
+  gap: 5px;
+}
+
+.stu-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.stu-input,
+.stu-select,
+.stu-textarea {
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.stu-input:focus,
+.stu-select:focus,
+.stu-textarea:focus {
+  border-color: var(--acc);
+}
+
+.stu-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.stu-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* -------------------------------------------------------------------------
+   Uebersicht
+   ------------------------------------------------------------------------- */
+
+.stu-overview {
+  overflow-y: auto;
+  padding: 20px 24px 60px;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  gap: 20px;
+  background: var(--bg);
+}
+
+.stu-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stu-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.stu-stat-num {
+  font: 700 24px/1.1 "IBM Plex Mono", monospace;
+  color: var(--acc);
+}
+
+.stu-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.stu-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.stu-overview-col {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.stu-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.stu-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stu-panel-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.stu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.stu-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 12.5px;
+  transition: background 0.1s ease;
+}
+
+.stu-row--click {
+  cursor: pointer;
+}
+
+.stu-row--click:hover {
+  background: var(--raise);
+}
+
+.stu-row-date {
+  font: 500 11.5px "IBM Plex Mono", monospace;
+  color: var(--muted);
+  flex: none;
+  min-width: 80px;
+}
+
+.stu-row-grow {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.stu-course-row {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  gap: 8px;
+  border-radius: 8px;
+  background: var(--bg);
+  transition: background 0.12s ease;
+  box-sizing: border-box;
+}
+
+.stu-course-row:hover {
+  background: var(--raise);
+}
+
+.stu-course-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.stu-course-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.stu-course-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.stu-course-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 20px;
+  flex-wrap: wrap;
+}
+
+.stu-course-btn {
+  font-size: 10.5px !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--line) !important;
+  white-space: nowrap !important;
+  line-height: 1.3 !important;
+}
+
+.stu-course-btn:hover {
+  background: var(--raise) !important;
+  color: var(--fg) !important;
+  border-color: var(--acc) !important;
+}
+
+.stu-row-sub {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stu-upload-form {
+  display: grid;
+  gap: 10px;
+}
+
+.stu-file-input {
+  font-size: 12.5px;
+  color: var(--fg);
+}
+
+.stu-upload-msg {
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.stu-upload-msg.is-ok {
+  background: rgba(47, 154, 103, 0.12);
+  color: var(--ok);
+  border: 1px solid rgba(47, 154, 103, 0.3);
+}
+
+.stu-upload-msg.is-err {
+  background: rgba(220, 50, 50, 0.1);
+  color: #d33;
+  border: 1px solid rgba(220, 50, 50, 0.3);
+}
+
+/* -------------------------------------------------------------------------
+   Projekte
+   ------------------------------------------------------------------------- */
+
+.stu-projekte {
+  overflow-y: auto;
+  padding: 20px 24px 60px;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  gap: 18px;
+  background: var(--bg);
+}
+
+.stu-projekt-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.stu-projekt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.stu-projekt-head h2 {
+  margin: 0;
+  font: 600 20px "Newsreader", Georgia, serif;
+  color: var(--fg);
+}
+
+.stu-projekt-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.stu-projekt-meta strong {
+  color: var(--fg);
+}
+
+.stu-projekt-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stu-projekt-link {
+  font-size: 12px;
+  color: var(--acc);
+  text-decoration: none;
+  background: var(--acc-soft);
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stu-projekt-link:hover {
+  text-decoration: underline;
+}
+
+.stu-milestones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.stu-milestone-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.stu-milestone-t {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--fg);
+}
+
+.stu-countdown {
+  font: 600 10.5px "IBM Plex Mono", monospace;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--raise);
+  color: var(--muted);
+}
+
+.stu-countdown--soon {
+  background: rgba(227, 178, 90, 0.18);
+  color: var(--warn);
+}
+
+.stu-countdown--over {
+  background: rgba(220, 50, 50, 0.16);
+  color: #d33;
+}
+
+/* -------------------------------------------------------------------------
+   Suche
+   ------------------------------------------------------------------------- */
+
+.stu-search-view {
+  overflow-y: auto;
+  padding: 20px 24px 60px;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  gap: 18px;
+  background: var(--bg);
+}
+
+.stu-search-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stu-search-input {
+  flex: 1;
+  min-width: 220px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: 14px "Manrope", sans-serif;
+}
+
+.stu-search-select {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  outline: none;
+}
+
+.stu-hit-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.stu-hit-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stu-hit-quote {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--raise);
+  border-left: 3px solid var(--acc);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-family: inherit;
+}
+
+.stu-hit-quote p {
+  margin: 0 0 6px 0;
+}
+
+.stu-hit-quote p:last-child {
+  margin-bottom: 0;
+}
+
+.stu-hit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* -------------------------------------------------------------------------
+   Mobil-Layout (<= 760px)
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .stu-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stu-overview,
+  .stu-projekte,
+  .stu-search-view {
+    padding: 12px 14px 50px;
+  }
+
+  .stu-viewh {
+    padding: 10px 14px;
+  }
+
+  .stu-viewh-desc {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Container-Queries (nach den Basisregeln fuer die Kaskade)
+   ------------------------------------------------------------------------- */
+
+@container (max-width: 900px) {
+  .stu-cal {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    overflow-y: auto;
+  }
+
+  .stu-cal-main {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    min-height: auto;
+  }
+
+  .stu-month {
+    min-height: 420px;
+  }
+
+  .stu-agenda {
+    border-left: none;
+    overflow-y: visible;
+  }
+}
+
+@container (max-width: 900px) {
+  .stu-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(320px, auto);
+    overflow-y: auto;
+  }
+
+  .stu-col {
+    min-height: 320px;
+  }
+}
+
+@container (max-width: 550px) {
+  .stu-cols {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(280px, auto);
+    overflow-y: auto;
+    padding: 12px 14px 50px;
+  }
+
+  .stu-col {
+    min-height: 280px;
+  }
+}

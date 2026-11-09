@@ -1,0 +1,56 @@
+/* tokens.css: Farb- und Designtokens fuer Hell- und Dunkelmodus */
+
+.stu.stu-light {
+  --topbar-h: 42px;
+  --bg: #f6f6f9;
+  --surface: #ffffff;
+  --side: #efeff4;
+  --raise: #e8e8ef;
+  --line: #dcdce5;
+  --fg: #1d1c24;
+  --muted: #6c6a7b;
+  --acc: #4b5bd8;
+  --acc-ink: #ffffff;
+  --acc-soft: rgba(75, 91, 216, 0.10);
+  --warn: #c9821b;
+  --ok: #2f9a67;
+  --paper: #ffffff;
+  --paper-fg: #23222b;
+  --slide: #ffffff;
+  --slide-line: #d9d9e2;
+  --math: #ececf4;
+  --shadow: 0 8px 26px rgba(30, 28, 50, 0.10);
+  color-scheme: light;
+}
+
+.stu.stu-dark {
+  --topbar-h: 42px;
+  --bg: #19181d;
+  --surface: #1e1d23;
+  --side: #141317;
+  --raise: #26252d;
+  --line: #2e2c36;
+  --fg: #ecebf0;
+  --muted: #8f8c9b;
+  --acc: #a3b1ff;
+  --acc-ink: #15162a;
+  --acc-soft: rgba(163, 177, 255, 0.13);
+  --warn: #e3b25a;
+  --ok: #5ccf8a;
+  --paper: #222128;
+  --paper-fg: #e6e4ec;
+  --slide: #f4f4f7;
+  --slide-line: #d9d9e2;
+  --math: #2d2c36;
+  --shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+/* Vollbild: Vorfahren des Workspace duerfen keinen eigenen Stacking-Kontext bilden,
+   damit das Hermes-Menue oder die Topbar den Workspace nicht ueberdecken */
+#root *:has(.stu) {
+  z-index: auto !important;
+  transform: none !important;
+  filter: none !important;
+  contain: none !important;
+}

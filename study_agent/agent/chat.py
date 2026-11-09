@@ -118,10 +118,16 @@ def build_chat_graph(tools, model: str = MAIN_MODEL, checkpointer=None, store=No
         ])
         return {"summary": msg.content}
 
-    async def classify(state: ChatState):
+    async def _profil(runtime) -> dict:
+        if runtime.store is None:
+            return {}
+        return await get_profil(runtime.store, runtime.context.user_id if runtime.context else "stirling")
+
+    async def classify(state: ChatState, runtime: Runtime[Context]):
         frage = state["messages"][-1]
+        kurse = "; ".join((await _profil(runtime)).get("kurse", [])) or "(unbekannt)"
         c: Classification = await classifier.ainvoke([
-            SystemMessage(prompts.CLASSIFY_PROMPT.format(zusammenfassung=_summary_block(state))),
+            SystemMessage(prompts.CLASSIFY_PROMPT.format(zusammenfassung=_summary_block(state), kurse=kurse)),
             HumanMessage(frage.content),
         ])
         return {"in_scope": c.in_scope, "category": c.category}
@@ -135,8 +141,7 @@ def build_chat_graph(tools, model: str = MAIN_MODEL, checkpointer=None, store=No
 
     async def answer(state: ChatState, runtime: Runtime[Context]):
         profil = ""
-        if runtime.store is not None:
-            p = await get_profil(runtime.store, runtime.context.user_id if runtime.context else "stirling")
+        if p := await _profil(runtime):
             profil = (f"\n\n# Profil\n- Aktuelle Kurse: {'; '.join(p.get('kurse', []))}"
                       f"\n- Bevorzugte Sprache: {p.get('sprache')}")
         system = prompts.SYSTEM_PROMPT.format(

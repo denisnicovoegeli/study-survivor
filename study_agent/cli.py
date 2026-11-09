@@ -212,6 +212,12 @@ def cmd_freigabe(args, settings) -> int:
     return run(args, settings)
 
 
+def cmd_serve(args, settings) -> int:
+    import uvicorn
+    uvicorn.run("study_agent.server.app:app", host=args.host, port=args.port, log_level="info")
+    return 0
+
+
 def cmd_suche(args, settings) -> int:
     hits = search(index_db_path(settings.state_dir), args.frage, course=args.course, limit=args.limit)
     if args.json:
@@ -287,6 +293,8 @@ def build_parser() -> argparse.ArgumentParser:
     add("freigabe", cmd_freigabe, positional("thread", nargs="?"),
         lambda p: p.add_argument("--decision", choices=["approve", "edit", "reject"], default="approve"),
         lambda p: p.add_argument("--feedback"), switch("--json"))
+    add("serve", cmd_serve, lambda p: p.add_argument("--host", default="127.0.0.1"),
+        lambda p: p.add_argument("--port", type=int, default=8765))
     add("suche", cmd_suche, positional("frage"), lambda p: p.add_argument("--course"),
         lambda p: p.add_argument("--limit", type=int, default=5), switch("--json"))
     return parser

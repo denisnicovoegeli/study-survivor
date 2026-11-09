@@ -131,3 +131,20 @@ verarbeiten-eba62806aa36  Cybersecurity BAI/1_Introduction & Foundations/Course 
 `--fehler` ist ein Demo-Schalter: `extract` lässt in jeder Runde eine Folie weg und hängt einen erfundenen Termin an. Entscheid über `study freigabe THREAD --decision approve|edit|reject [--feedback TEXT]` oder die Freigabe-Karte im Dashboard (`Command(resume=...)`). `reject` lässt die Datei offen, `edit` startet eine weitere Runde mit dem Feedback.
 
 Hinweis: Auf dem Mac fehlte `state/verarbeitet.json` (liegt auf dem Pi). Der Stand wurde für Dateien mit vollständiger `.folien.md` bzw. mit Terminen in `termine/*.yaml` rekonstruiert; 38 Dateien sind offen.
+
+### Schritt 5: Dashboard
+
+```bash
+cd web && npm install && npm run build && cd ..
+uv run study serve      # http://localhost:8765
+```
+
+FastAPI-App [study_agent/server/app.py](study_agent/server/app.py) mit den übernommenen Routen aus dem Hermes-Plugin (Dateien, Lesen und PDF, Suche, Karten, Kalender, Modul, Übersicht, Upload; ohne Projekte, Kanban und Auftragsbrett) unter demselben Pfad `/api/plugins/studium/`. Neu: `POST /chat` (Server-Sent Events: `step`, `tool`, `token`, `final`), `GET /chat/threads`, `GET /chat/history`, `GET /freigaben`, `POST /freigaben/{thread_id}` (`Command(resume={decision, feedback})`). Frontend [web/](web/) als eigenständige Vite-App mit React 19; `SDK.authedFetch` durch `fetch` ersetzt, der Hermes-Gateway durch einen SSE-Client ([sse.js](web/src/chat/sse.js), [ChatPanel.jsx](web/src/chat/ChatPanel.jsx)).
+
+Chat mit Antwort und Quellen (Thread nach Reload aus dem Checkpointer geladen):
+
+![Chat](docs/nachweise/schritt5-chat-antwort-quellen.jpg)
+
+Freigabe-Karte für den `interrupt()` aus Schritt 4. Entscheid „Bearbeiten“ mit Feedback „Folie 8 ergänzen und den Weihnachtstermin entfernen“ startete eine weitere Runde ohne Sabotage; danach Prüfung ok, 15/15 Folien, kein erfundener Termin geschrieben:
+
+![Freigabe](docs/nachweise/schritt5-freigabe-karte.jpg)

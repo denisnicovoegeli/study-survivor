@@ -1,0 +1,527 @@
+/* read.css: Formatierung fuer den Lesemodus (Magazin-Ansicht mit Serifenschrift und TOC) */
+
+.stu-read {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  scroll-behavior: smooth;
+}
+
+/* Kopfbereich mit Kurs, Kennzahlen, Bearbeiten-Knopf und Zeitleiste */
+.stu-read-h {
+  padding: 28px 40px 0;
+  flex: none;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.stu-kicker {
+  font: 500 11px/1.4 "IBM Plex Mono", monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stu-kicker-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stu-read-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 4px 0 16px;
+  flex-wrap: wrap;
+}
+
+.stu-read-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stu-read-h h1 {
+  font: 600 34px/1.1 "Newsreader", Georgia, serif;
+  margin: 0;
+  color: var(--fg);
+}
+
+/* Knopf Bearbeiten */
+.stu-tbtn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  background: var(--surface);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.stu-tbtn:hover {
+  color: var(--fg);
+  border-color: var(--muted);
+}
+
+.stu-tbtn.is-pri {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: var(--acc);
+}
+
+.stu-tbtn.is-pri:hover {
+  opacity: 0.92;
+}
+
+.stu-tbtn .stu-ic {
+  width: 14px;
+  height: 14px;
+}
+
+/* Wochen-Zeitleiste */
+.stu-weeks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.stu-weeks li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 16px 10px;
+  min-width: 140px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  flex: none;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.stu-weeks li:hover {
+  background: var(--raise);
+}
+
+.stu-weeks li.is-on {
+  border-color: var(--acc);
+}
+
+.stu-weeks li.is-on b {
+  color: var(--acc);
+}
+
+.stu-weeks b {
+  font: 600 11px "IBM Plex Mono", monospace;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.stu-weeks span {
+  font-size: 12.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg);
+}
+
+/* Hauptbereich: Inhaltsverzeichnis links, Lesepapier rechts */
+.stu-read-b {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 760px);
+  gap: 32px;
+  padding: 24px 40px 80px;
+  justify-content: center;
+  min-height: 0;
+}
+
+.stu-read-b.no-toc {
+  grid-template-columns: minmax(0, 760px);
+}
+
+/* Inhaltsverzeichnis links */
+.stu-toc {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  display: grid;
+  gap: 2px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+}
+
+.stu-toc-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.stu-toc-h .stu-label {
+  margin: 0;
+  padding: 0;
+}
+
+.stu-toc-h .stu-icbtn {
+  width: 22px;
+  height: 22px;
+}
+
+.stu-toc a {
+  display: block;
+  color: var(--muted);
+  padding: 4px 10px;
+  border-left: 2px solid var(--line);
+  cursor: pointer;
+  font-size: 12.5px;
+  text-decoration: none;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.stu-toc a:hover {
+  color: var(--fg);
+  border-color: var(--muted);
+}
+
+.stu-toc a.is-on {
+  color: var(--acc);
+  border-color: var(--acc);
+  font-weight: 600;
+}
+
+.stu-toc a.lvl-3 {
+  padding-left: 18px;
+  font-size: 11.5px;
+}
+
+.stu-toc a.lvl-4 {
+  padding-left: 26px;
+  font-size: 11px;
+}
+
+/* Lese-Papier mit Serifenschrift */
+.stu-paper {
+  background: var(--paper);
+  color: var(--paper-fg);
+  border-radius: 12px;
+  padding: 34px 48px 48px;
+  box-shadow: var(--shadow);
+  font: 17.5px/1.7 "Newsreader", Georgia, serif;
+  border: 1px solid var(--line);
+  min-width: 0;
+  word-break: break-word;
+}
+
+.stu-paper h1 {
+  font: 600 32px/1.15 "Newsreader", Georgia, serif;
+  margin: 0 0 14px;
+  text-wrap: balance;
+  color: var(--paper-fg);
+}
+
+.stu-paper h2 {
+  font: 700 12px "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--acc);
+  margin: 32px 0 8px;
+  scroll-margin-top: 16px;
+}
+
+.stu-paper h3 {
+  font: 600 18px/1.3 "Newsreader", Georgia, serif;
+  margin: 24px 0 6px;
+  color: var(--paper-fg);
+  scroll-margin-top: 16px;
+}
+
+.stu-paper h4 {
+  font: 600 15px/1.3 "Newsreader", Georgia, serif;
+  margin: 18px 0 4px;
+  color: var(--paper-fg);
+  scroll-margin-top: 16px;
+}
+
+.stu-paper p {
+  margin: 10px 0;
+}
+
+.stu-paper ul,
+.stu-paper ol {
+  padding-left: 22px;
+  margin: 12px 0;
+  display: grid;
+  gap: 8px;
+}
+
+.stu-paper li {
+  line-height: 1.6;
+}
+
+.stu-paper code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.88em;
+  background: var(--raise);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.stu-paper pre {
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 14px 0;
+}
+
+.stu-paper pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.stu-paper blockquote {
+  margin: 16px 0;
+  padding: 10px 16px;
+  border-left: 3px solid var(--acc);
+  background: var(--raise);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+}
+
+.stu-paper table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 14px;
+  font-family: "Manrope", sans-serif;
+}
+
+.stu-paper th,
+.stu-paper td {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.stu-paper th {
+  background: var(--raise);
+  font-weight: 600;
+}
+
+.stu-paper hr {
+  border: 0;
+  height: 1px;
+  background: var(--line);
+  margin: 32px 0;
+}
+
+.stu-paper .stu-flink {
+  font-family: "Manrope", sans-serif;
+  font-size: 0.82em;
+}
+
+/* Lade- und Fehlerzustaende */
+.stu-read-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.stu-read-error {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  color: var(--warn);
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+/* Kursuebersicht (wenn kein aktiver Markdown-Tab gewaehlt ist) */
+.stu-read-overview {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 24px;
+}
+
+.stu-read-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--raise);
+  border-radius: 9px;
+  border: 1px solid var(--line);
+}
+
+.stu-read-hint strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+  color: var(--fg);
+}
+
+.stu-read-hint p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.stu-read-hint .stu-ic {
+  width: 22px;
+  height: 22px;
+  color: var(--acc);
+  flex: none;
+  margin-top: 2px;
+}
+
+.stu-read-overview-weeks h3 {
+  margin: 0 0 14px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.stu-read-weeklist {
+  display: grid;
+  gap: 12px;
+}
+
+.stu-read-weekitem {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px 16px;
+  background: var(--bg);
+}
+
+.stu-read-weekitem-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stu-read-weeknum {
+  font: 700 12px "IBM Plex Mono", monospace;
+  color: var(--acc);
+  background: var(--acc-soft);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+.stu-read-weektitle {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--fg);
+}
+
+.stu-read-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stu-read-filebtn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--fg);
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.stu-read-filebtn:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+  background: var(--raise);
+}
+
+.stu-read-filebtn.is-md {
+  font-weight: 600;
+}
+
+.stu-no-files {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Mobil-Layout (<= 760px) */
+@media (max-width: 760px) {
+  .stu-read-h {
+    padding: 18px 16px 0;
+  }
+
+  .stu-read-h h1 {
+    font-size: 26px;
+  }
+
+  .stu-read-b {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 12px 40px;
+    gap: 16px;
+  }
+
+  .stu-toc {
+    display: none !important;
+  }
+
+  .stu-paper {
+    padding: 22px 18px 30px;
+    font-size: 16.5px;
+  }
+
+  .stu-weeks li {
+    min-width: 120px;
+    padding: 6px 12px 8px;
+  }
+
+  .stu-read-overview {
+    padding: 18px 14px;
+  }
+}

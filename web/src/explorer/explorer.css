@@ -1,0 +1,533 @@
+/* explorer.css: Stile fuer Dateibaum (Explorer) und Sessions-Liste */
+
+.stu-explorer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Kopfzeile mit Umschalter Dateien/Sessions und Einklapp-Knopf */
+.stu-explorer-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 6px;
+  flex: none;
+}
+
+/* Wird Explorer innerhalb der regulaeren Studio-Shell gerendert,
+   stellt StudioLayout bereits den Kopf bereit -> internen Kopf ausblenden */
+.stu-left-body .stu-explorer-h {
+  display: none;
+}
+
+/* Kursauswahl */
+.stu-explorer-courserow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 10px 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.stu-course {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.12s ease;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.stu-course:focus {
+  border-color: var(--acc);
+}
+
+.stu-modul-btn {
+  flex: none;
+}
+
+/* Filterfeld */
+.stu-filter {
+  margin: 4px 10px 6px;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.stu-filter:focus {
+  border-color: var(--acc);
+}
+
+.stu-filter::placeholder {
+  color: var(--muted);
+}
+
+/* Dateibaum */
+.stu-tree {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 6px 40px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Wurzel-Kopfzeile (Lernen, Folien, Moodle) */
+.stu-root {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 8px 4px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--fg);
+  user-select: none;
+}
+
+.stu-root:not(:first-child) {
+  margin-top: 8px;
+}
+
+.stu-root em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.stu-root em .stu-ic {
+  width: 12px;
+  height: 12px;
+  color: var(--warn);
+}
+
+/* Abschnitte und Details */
+.stu-tree details > summary {
+  list-style: none;
+}
+
+.stu-tree details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Zeilen im Dateibaum */
+.stu-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--fg);
+  user-select: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.stu-row:hover {
+  background: var(--raise);
+}
+
+.stu-row.is-on {
+  background: var(--acc-soft);
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.stu-row.is-ro {
+  color: var(--muted);
+}
+
+.stu-row.is-ro:hover {
+  color: var(--fg);
+}
+
+.stu-row.is-ro.is-on {
+  color: var(--acc);
+}
+
+.stu-row.lvl1 {
+  padding-left: 10px;
+}
+
+.stu-row.lvl2 {
+  padding-left: 26px;
+  font-size: 12.5px;
+}
+
+summary.stu-row::before {
+  content: "›";
+  display: inline-block;
+  width: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: transform 0.12s ease;
+}
+
+details[open] > summary.stu-row::before {
+  transform: rotate(90deg);
+}
+
+.stu-row-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.stu-wk {
+  font: 600 10.5px/1 "IBM Plex Mono", monospace;
+  color: var(--muted);
+  margin-right: 6px;
+  flex: none;
+}
+
+.stu-new {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--acc-ink);
+  background: var(--acc);
+  border-radius: 999px;
+  padding: 1px 6px;
+  flex: none;
+  line-height: 1.2;
+}
+
+.stu-tree-empty {
+  padding: 16px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Artefakt-Knöpfe und Menü unter verarbeitetem PDF */
+.stu-pdf-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stu-artefakt-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 24px;
+  padding-right: 6px;
+  margin-top: 1px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.stu-art-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--raise);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  transition: all 0.12s ease;
+  line-height: 1.3;
+  white-space: nowrap;
+  flex: none;
+}
+
+.stu-art-btn:hover {
+  background: var(--surface);
+  color: var(--fg);
+  border-color: var(--acc);
+}
+
+.stu-folien-menu {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.stu-folien-menu-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--raise);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  line-height: 1.3;
+  flex: none;
+}
+
+.stu-folien-menu-btn:hover {
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.stu-folien-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: auto;
+  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  z-index: 50;
+  min-width: 150px;
+  padding: 4px;
+}
+
+.stu-folien-dropdown button {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  color: var(--fg);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.stu-folien-dropdown button:hover {
+  background: var(--raise);
+  color: var(--acc);
+}
+
+/* Pending-Marken & Verarbeiten-Knopf */
+.stu-badge-pending {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  margin-left: auto;
+  margin-right: 4px;
+  flex: none;
+  line-height: 1.2;
+}
+
+.stu-badge-pending.is-neu {
+  background: rgba(47, 154, 103, 0.15);
+  color: var(--ok);
+}
+
+.stu-badge-pending.is-veraltet {
+  background: rgba(201, 130, 27, 0.15);
+  color: var(--warn);
+}
+
+.stu-btn-verarbeiten {
+  all: unset;
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  transition: opacity 0.12s ease;
+  flex: none;
+  line-height: 1.2;
+}
+
+.stu-btn-verarbeiten:hover {
+  opacity: 0.88;
+}
+
+/* Moodle-Links */
+.stu-row.is-link .stu-ic {
+  width: 14px;
+  height: 14px;
+  color: var(--acc);
+  margin-right: 4px;
+  flex: none;
+}
+
+.stu-link-url {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+  opacity: 0.8;
+}
+
+/* Sessions-Leiste */
+.stu-sessions {
+  padding: 4px 8px 30px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stu-newsess {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--fg);
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 8px;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.stu-newsess:hover {
+  background: var(--raise);
+  border-color: var(--acc);
+}
+
+.stu-newsess .stu-ic {
+  width: 16px;
+  height: 16px;
+  color: var(--acc);
+}
+
+.stu-sess-group {
+  margin-bottom: 10px;
+}
+
+.stu-sess-group .stu-label {
+  margin: 12px 8px 4px;
+}
+
+.stu-sess {
+  padding: 6px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--fg);
+  user-select: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.stu-sess:hover {
+  background: var(--raise);
+}
+
+.stu-sess.is-on {
+  background: var(--raise);
+  font-weight: 600;
+}
+
+.stu-sess-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.stu-sess-empty {
+  padding: 18px 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.stu-sess-error {
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--warn);
+}
+
+.stu-sess-error p {
+  margin: 0 0 8px;
+}
+
+.stu-btn-retry {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.stu-btn-retry:hover {
+  background: var(--raise);
+  border-color: var(--acc);
+}
+
+/* Mobiloptimierung (Handy <= 760px) */
+@media (max-width: 760px) {
+  .stu-course,
+  .stu-filter {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .stu-row {
+    padding: 7px 10px;
+    font-size: 13.5px;
+  }
+
+  .stu-row.lvl2 {
+    padding-left: 28px;
+    font-size: 13px;
+  }
+
+  .stu-newsess {
+    padding: 10px 12px;
+    font-size: 13.5px;
+  }
+
+  .stu-sess {
+    padding: 8px 12px;
+    font-size: 13.5px;
+  }
+}
