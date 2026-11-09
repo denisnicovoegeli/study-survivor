@@ -12,9 +12,9 @@ _KEY_VARS = ("LITELLM_API_KEY", "AISL_API_KEY")
 # Modelle (SW4: Modellwahl). Hauptmodell fuer Chat und Extraktion, zweites Modell eines
 # anderen Anbieters fuer die Pruefung im Graph verarbeiten (Vier-Augen-Prinzip, SW8).
 MAIN_MODEL = os.environ.get("STUDY_MAIN_MODEL", "gpt-5.6-luna")
-CHECK_MODEL = os.environ.get("STUDY_CHECK_MODEL", "claude-haiku-5-5")
+CHECK_MODEL = os.environ.get("STUDY_CHECK_MODEL", "azure_ai/claude-haiku-5-5")
 VISION_MODEL = os.environ.get("STUDY_VISION_MODEL", "gpt-5.6-luna")
-EMBED_MODEL = os.environ.get("STUDY_EMBED_MODEL", "apertus-v1.1-swiss-embed-0.4b")
+EMBED_MODEL = os.environ.get("STUDY_EMBED_MODEL", "andreasmartin/apertus-v1.1-swiss-embed-0.4b")
 
 # .env im Repo (LITELLM_API_KEY, LANGSMITH_*), danach ~/.config/aisl.env als Rueckfall
 load_dotenv(REPO_DIR / ".env")

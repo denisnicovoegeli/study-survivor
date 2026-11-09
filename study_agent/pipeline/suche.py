@@ -108,15 +108,25 @@ def _split_sections(text: str, quelle: str) -> list[tuple[str, str]]:
     return sections
 
 
+# Ordner, die nicht ins Kursmaterial gehören (z. B. hochgeladene Projekt-Repos mit .venv)
+SKIP_PARTS = frozenset({".venv", "venv", "node_modules", "site-packages", "__pycache__", ".git"})
+
+
+def _skip(path: Path) -> bool:
+    return any(part in SKIP_PARTS for part in path.parts)
+
+
 def iter_docs(knowledge_dir: Path):
     """(rel, Quelldatei, Quelle) für jede indizierbare Datei. „folien“ schlägt „rohtext“."""
     folien = {}
     for path in sorted(knowledge_dir.rglob("*.folien.md")):
+        if _skip(path.relative_to(knowledge_dir)):
+            continue
         key = path.relative_to(knowledge_dir).as_posix()[:-len(".folien.md")]
         folien[key] = path
     for path in sorted(knowledge_dir.rglob("*.md")):
         rel = path.relative_to(knowledge_dir)
-        if rel.name == "INDEX.md" or rel.name.endswith(".folien.md"):
+        if rel.name == "INDEX.md" or rel.name.endswith(".folien.md") or _skip(rel):
             continue
         key = rel.as_posix()[:-len(".md")]
         if key in folien:

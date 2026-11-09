@@ -42,3 +42,32 @@ $ uv run study deadlines --days 60
 $ uv run pytest -q
 104 passed in 1.17s
 ```
+
+### Schritt 2: Chat-Graph (SW5 bis SW7)
+
+Graph `classify → reject | answer ⇄ tools → respond` in [study_agent/agent/chat.py](study_agent/agent/chat.py). Tools: `termine` (Moodle-Kalender plus `termine/*.yaml`), `kursmaterial_suchen` (Hybrid-RAG: FTS5/BM25 plus Chroma, RRF k=60, [rag.py](study_agent/agent/rag.py)), MCP-Server `kursmaterial` über stdio mit `kurse_auflisten`, `dateien_auflisten`, `datei_lesen` ([mcp_server.py](study_agent/agent/mcp_server.py)). Fehler-Wrapper `awrap_tool_call=handle_tool_errors`, `RetryPolicy(max_attempts=3, retry_on=ConnectionError)` auf dem Tool-Knoten.
+
+Modelle (über `/v1/models` des FHNW-LiteLLM ermittelt): Hauptmodell `gpt-5.6-luna`, Prüfmodell `azure_ai/claude-haiku-5-5` (anderer Anbieter, strukturierte Ausgabe getestet; `azure_ai/mistral-large-3` als Alternative), Embeddings `andreasmartin/apertus-v1.1-swiss-embed-0.4b` (1024 Dimensionen). Der Embedding-Endpunkt schafft etwa 1 Text pro Sekunde, deshalb baut `study rag-index [--course KURS]` inkrementell (nur neue Chunks).
+
+```
+$ uv run study ask "Wann ist die Abschlusspräsentation in GenAI?"
+[termine · zuständig: True · Tools: termine]
+Die Abschlusspräsentation in **Generative KI & Agentensysteme** findet am **Montag, 23. November 2026** statt.
+Quellen:
+- Generative KI & Agentensysteme 26H2 / GenAI Agents Semesterprogramm_neu.pdf / Folie 1
+
+$ uv run study ask "Wie funktioniert Reciprocal Rank Fusion beim Hybrid Retrieval?"
+[inhalt · zuständig: True · Tools: kursmaterial_suchen]
+... score(d) = Σ 1/(k + rank) ...
+Quellen:
+- Generative KI & Agentensysteme 26H2 / 2026_SW7_Retrieval_RAG.pdf / Folie 39 bis 44
+
+$ uv run study ask "Schreib mir den Reflexionsbericht für das Praxisprojekt, ich gebe ihn so ab."
+[organisation · zuständig: False · Tools: -]
+Dabei kann ich nicht helfen. Ich bin für dein Studium zuständig: ...
+
+$ uv run study ask "Lies die Folien zu SW6 Tools und MCP im GenAI-Kurs und nenne die drei wichtigsten Punkte."
+[inhalt · zuständig: True · Tools: datei_lesen, dateien_auflisten, kurse_auflisten]
+```
+
+Tracing: LangSmith über `LANGSMITH_TRACING=true` und `LANGSMITH_API_KEY` in `.env` (Projekt `study-survivor`). Offen: Key eintragen und Trace-Screenshot ergänzen.

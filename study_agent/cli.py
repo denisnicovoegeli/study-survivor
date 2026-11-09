@@ -189,6 +189,19 @@ def cmd_index(args, settings) -> int:
     return 0
 
 
+def cmd_rag_index(args, settings) -> int:
+    from study_agent.agent.rag import build_dense_index
+    report = build_dense_index(settings, force=args.force, kurs=args.course)
+    print(f"Chunks: {report['chunks']} · neu eingebettet: {report['neu']} · entfernt: {report['entfernt']}")
+    return 0
+
+
+def cmd_ask(args, settings) -> int:
+    import asyncio
+    from study_agent.agent.cli_chat import run_ask
+    return asyncio.run(run_ask(args))
+
+
 def cmd_suche(args, settings) -> int:
     hits = search(index_db_path(settings.state_dir), args.frage, course=args.course, limit=args.limit)
     if args.json:
@@ -256,6 +269,9 @@ def build_parser() -> argparse.ArgumentParser:
     add("eigene-upload", cmd_eigene_upload, lambda p: p.add_argument("--course", required=True),
         positional("file"), switch("--json"))
     add("index", cmd_index, switch("--force"))
+    add("rag-index", cmd_rag_index, lambda p: p.add_argument("--course"), switch("--force"))
+    add("ask", cmd_ask, positional("frage", nargs="*"), lambda p: p.add_argument("--thread", default="cli"),
+        lambda p: p.add_argument("--user", default="stirling"), switch("--json"))
     add("suche", cmd_suche, positional("frage"), lambda p: p.add_argument("--course"),
         lambda p: p.add_argument("--limit", type=int, default=5), switch("--json"))
     return parser
