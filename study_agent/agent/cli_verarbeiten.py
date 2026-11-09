@@ -66,7 +66,7 @@ def cmd_verarbeiten(args, settings) -> int:
         print(f"verarbeiten: {rel}")
         cfg = {"configurable": {"thread_id": tid}}
         try:
-            _run(g, {"rel": rel, "sabotage": args.fehler}, cfg)
+            _run(g, {"rel": rel, "sabotage": args.fehler, "force": bool(args.force and args.rel)}, cfg)
         except Exception as exc:  # eine Datei darf den Lauf nicht abbrechen
             print(f"  FEHLER {type(exc).__name__}: {exc}", file=sys.stderr)
             code = 1

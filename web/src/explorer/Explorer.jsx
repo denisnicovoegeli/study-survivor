@@ -71,6 +71,7 @@ export function Explorer() {
     sendToChat,
     setView,
     api,
+    toast,
   } = useStudio();
 
   const [query, setQuery] = useState("");
@@ -234,10 +235,14 @@ export function Explorer() {
   }
 
   // Verarbeiten-Knopf startet den Skill im Chat
-  function handleVerarbeiten(e, file) {
+  // Startet den Graphen verarbeiten im Backend; Freigabefälle erscheinen als Karte im Chat
+  async function handleVerarbeiten(e, file) {
     e.stopPropagation();
-    if (sendToChat) {
-      sendToChat({ prompt: `/verarbeiten ${file.path}` });
+    try {
+      await api("verarbeiten", { method: "POST", body: { rel: file.path } });
+      toast(`Verarbeitung gestartet: ${file.name} (etwa 1 bis 3 Minuten)`);
+    } catch (err) {
+      toast(`Verarbeitung nicht gestartet: ${err.message}`);
     }
   }
 
@@ -375,7 +380,7 @@ export function Explorer() {
                               type="button"
                               className="stu-btn-verarbeiten"
                               onClick={(e) => handleVerarbeiten(e, file)}
-                              title="Mit Skill /verarbeiten bearbeiten"
+                              title="Mit dem Graphen verarbeiten (Extraktion, Prüfung, Freigabe)"
                             >
                               verarbeiten
                             </button>

@@ -42,7 +42,7 @@ def read_done(state_dir: Path) -> dict[str, list[int]]:
 
 def pending_files(settings: Settings, records: list[FileRecord], overrides: dict[str, str], site_url: str,
                   course_ids: set[int] | None = None,
-                  eigene: list[EigeneFile] | None = None) -> list[PendingFile]:
+                  eigene: list[EigeneFile] | None = None, include_done: bool = False) -> list[PendingFile]:
     manifest = load_manifest(settings.knowledge_dir)
     done = read_done(settings.state_dir)
     seen: set[str] = set()
@@ -58,7 +58,7 @@ def pending_files(settings: Settings, records: list[FileRecord], overrides: dict
         seen.add(key)
         klasse = overrides.get(key, entry["klasse"])
         route = ROUTES.get(klasse)
-        if route is None or done.get(key) == entry["sig"]:
+        if route is None or (not include_done and done.get(key) == entry["sig"]):
             continue
         out.append(PendingFile(
             rel=key, course=r.course, course_id=r.course_id, section=r.section, name=rel.name, klasse=klasse,
@@ -79,7 +79,7 @@ def pending_files(settings: Settings, records: list[FileRecord], overrides: dict
         seen.add(key)
         klasse = overrides.get(key, entry["klasse"])
         route = ROUTES.get(klasse)
-        if route is None or done.get(key) == entry["sig"]:
+        if route is None or (not include_done and done.get(key) == entry["sig"]):
             continue
         # Eigene Dateien haben keinen Moodle-Kurs und keinen Abschnitt; Lernartefakte
         # landen direkt unter lernen/<Kurs>/.

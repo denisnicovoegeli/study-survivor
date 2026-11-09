@@ -309,16 +309,17 @@ export function Overview() {
                             type="button"
                             className="stu-tbtn"
                             style={{ background: "var(--acc)", color: "var(--acc-ink)", padding: "3px 8px" }}
-                            onClick={() => {
-                              sendToChat({
-                                skill: "verarbeiten",
-                                arg: p.course || p.name,
-                              });
-                              toast(`Skill /verarbeiten für ${p.course || p.name} gestartet.`);
+                            onClick={async () => {
+                              try {
+                                await api("verarbeiten", { method: "POST", body: { rel: p.rel } });
+                                toast(`Verarbeitung gestartet: ${p.name}`);
+                              } catch (err) {
+                                toast(`Verarbeitung nicht gestartet: ${err.message}`);
+                              }
                             }}
-                            title="Mit Agent verarbeiten"
+                            title="Mit dem Graphen verarbeiten (Extraktion, Prüfung, Freigabe)"
                           >
-                            /verarbeiten
+                            verarbeiten
                           </button>
                         </li>
                       ))}

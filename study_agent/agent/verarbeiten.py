@@ -72,6 +72,8 @@ und ein Info-JSON erstellt. Prüfe den Entwurf gegen den Rohtext (die zweite, un
 2. zahl: eine Zahl, ein Datum oder ein Name im Entwurf weicht vom Rohtext ab.
 3. termin: ein Termin im JSON steht so nicht im Rohtext (erfunden, falsches Datum, falsche Art).
 4. sonstiges: erfundene Inhalte, die weder im Rohtext noch plausibel aus einem Seitenbild stammen.
+Bei Route „info“ (Semesterprogramm, Projektbeschreibung) gibt es absichtlich KEINEN Folientext, nur das
+Info-JSON: prüfe dann nur Termine, Zahlen und Angaben im JSON, fehlende Folien sind kein Fehler.
 Bildbeschreibungen (Abbildung) und Umformatierungen (Markdown, LaTeX) sind KEIN Fehler. Kleine \
 Abweichungen bei Zeilenumbrüchen ignorieren. ok=true nur, wenn es keine Beanstandung der Arten 1 bis 4 gibt. \
 Sei streng bei Terminen und Zahlen, sonst grosszügig."""
@@ -149,6 +151,7 @@ class Entscheid(BaseModel):
 
 class VState(TypedDict, total=False):
     rel: str
+    force: bool                  # auch bereits verarbeitete Dateien
     route: str
     sabotage: bool               # Demo: absichtlich fehlerhafte Extraktion
     texts: dict[str, str]        # Seite -> Rohtext
@@ -162,14 +165,15 @@ class VState(TypedDict, total=False):
     geschrieben: list[str]
 
 
-def _pending(rel: str):
+def _pending(rel: str, force: bool = True):
     from study_agent.cli import _current_ids, _overrides, _site_url
     from study_agent.pipeline.eigene import eigene_files
     from study_agent.pipeline.moodle_db import all_files
     from study_agent.pipeline.pending import pending_files
 
     s = load_settings()
-    items = pending_files(s, all_files(s.moodle_db), _overrides(s), _site_url(s), None, eigene=eigene_files(s.data_dir))
+    items = pending_files(s, all_files(s.moodle_db), _overrides(s), _site_url(s), None,
+                          eigene=eigene_files(s.data_dir), include_done=force)
     pf = next((p for p in items if p.rel == rel), None)
     if pf is None:
         raise ValueError(f"{rel}: nicht offen (siehe `study pending --all`)")
@@ -217,7 +221,7 @@ def _folien_md(state: VState) -> str:
 
 def read(state: VState):
     """Code: Rohtext und Seitenbilder holen. Das Original-PDF wird nur hier geöffnet, einmal pro Datei."""
-    pf = _pending(state["rel"])
+    pf = _pending(state["rel"], force=state.get("force", False))
     texts = raw_pages(pf.raw_md.read_text())
     visual = pf.visual if pf.route == "voll" else pf.visual[:MAX_INFO_IMAGES]
     images: dict[str, str] = {}
@@ -237,8 +241,9 @@ def read(state: VState):
                     images[str(n)] = str(path)
         finally:
             doc.close()
+    # neuer Lauf im selben Thread: Werte des vorigen Laufs zurücksetzen
     return {"route": pf.route, "texts": {str(k): v for k, v in texts.items()}, "images": images, "runde": 0,
-            "feedback": "", "folien": {}}
+            "feedback": "", "folien": {}, "pruefung": {}, "entscheid": "", "geschrieben": []}
 
 
 def extract(state: VState):
@@ -294,7 +299,7 @@ def check(state: VState):
     pruefer = chat_model(CHECK_MODEL).with_structured_output(Pruefung, method="json_schema")
     p: Pruefung = pruefer.invoke([
         {"role": "system", "content": PRUEFEN},
-        {"role": "user", "content": f"# Rohtext\n{rohtext}\n\n# Entwurf\n{entwurf}"},
+        {"role": "user", "content": f"Route: {state['route']}\n\n# Rohtext\n{rohtext}\n\n# Entwurf\n{entwurf}"},
     ])
     # harte Regel im Code: jede Seite braucht eine Folie (wie `study check-folien`)
     if state["route"] == "voll":
@@ -348,15 +353,24 @@ def _merge_termine(course: str, course_id: int, termine: list[dict]) -> int:
     path = load_settings().termine_dir / f"{course}.yaml"
     data = yaml.load(path.read_text()) if path.exists() else {"kurs": course, "kurs_id": course_id, "termine": []}
     data.setdefault("termine", [])
-    vorhanden = {(str(t.get("datum")), str(t.get("titel")).casefold()) for t in data["termine"]}
+    from difflib import SequenceMatcher
+
+    def gleich(a: str, b: str) -> bool:
+        a, b = a.casefold(), b.casefold()
+        return a in b or b in a or SequenceMatcher(None, a, b).ratio() >= 0.6
+
+    vorhanden: list[tuple[str, str, str]] = [(str(t.get("datum")), str(t.get("titel")), str(t.get("art"))) for t in data["termine"]]
     neu = 0
     for t in termine:
         try:
             tag = date.fromisoformat(t["datum"])
         except (ValueError, TypeError):
             continue
-        if (str(tag), t["titel"].casefold()) in vorhanden:
+        # derselbe Termin: gleiches Datum und ähnlicher Titel, oder gleiches Datum und gleiche Art bei Abgaben/Prüfungen
+        if any(d == str(tag) and (gleich(ti, t["titel"]) or (a == t["art"] and a in ("abgabe", "pruefung")))
+               for d, ti, a in vorhanden):
             continue
+        vorhanden.append((str(tag), t["titel"], t["art"]))
         eintrag = {"datum": tag, "titel": Q(t["titel"]), "art": t["art"], "quelle": Q(t["quelle"])}
         if t.get("zeit"):
             eintrag["zeit"] = Q(t["zeit"])  # gequotet, sonst liest YAML 1.1 „08:30“ als Zahl

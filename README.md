@@ -174,7 +174,7 @@ verarbeiten-eba62806aa36  Cybersecurity BAI/1_Introduction & Foundations/Course 
 
 `--fehler` ist ein Demo-Schalter: `extract` lässt in jeder Runde eine Folie weg und hängt einen erfundenen Termin an. Entscheid über `study freigabe THREAD --decision approve|edit|reject [--feedback TEXT]` oder die Freigabe-Karte im Dashboard (`Command(resume=...)`). `reject` lässt die Datei offen, `edit` startet eine weitere Runde mit dem Feedback.
 
-Hinweis: Auf dem Mac fehlte `state/verarbeitet.json` (liegt auf dem Pi). Der Stand wurde für Dateien mit vollständiger `.folien.md` bzw. mit Terminen in `termine/*.yaml` rekonstruiert; 38 Dateien sind offen.
+Datenstand: Die study-agent-Kopie auf dem Mac war veraltet (nur Deep Learning verarbeitet). `data/` stammt deshalb vom Pi (`/opt/appdata/hermes-study/workspace/study-agent`: knowledge, lernen, termine, klassen.yaml, verarbeitet.json; 39 `.folien.md`, 106 Lerndateien in allen 6 Kursen). Weil die Signatur in `verarbeitet.json` mtime und Grösse der Moodle-Datei enthält und die mtimes auf Mac und Pi verschieden sind, wurde der Pi-Stand bei gleicher Grösse auf die Mac-Signatur umgeschrieben (48 Dateien). `study verarbeiten --force REL` verarbeitet eine schon fertige Datei neu (so entstanden die fehlenden `modul.md` für Marketing und Praxisprojekt). Im Dashboard startet der Knopf „verarbeiten“ (Explorer, Übersicht) den Graphen über `POST /verarbeiten`.
 
 ### Schritt 5: Dashboard
 

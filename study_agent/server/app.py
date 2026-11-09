@@ -141,6 +141,40 @@ async def freigabe_entscheid(thread_id: str, payload: dict = Body(...)):
             "geschrieben": v.get("geschrieben", []), "pruefung": v.get("pruefung")}
 
 
+@app.post(f"{API}/verarbeiten")
+async def verarbeiten_start(payload: dict = Body(...)):
+    """Startet den Graphen `verarbeiten` für eine Datei im Hintergrund (Knopf im Explorer und in der Übersicht)."""
+    from study_agent.agent.verarbeiten import thread_id
+
+    rel = str(payload.get("rel") or "")
+    if not rel:
+        raise HTTPException(400, "rel fehlt")
+    laeufe = app.state.__dict__.setdefault("laeufe", {})
+    if laeufe.get(rel, {}).get("status") == "läuft":
+        return {"rel": rel, **laeufe[rel]}
+    tid = thread_id(rel)
+    laeufe[rel] = {"status": "läuft", "thread_id": tid}
+
+    def run():
+        g = app.state.verarbeiten
+        cfg = {"configurable": {"thread_id": tid}}
+        try:
+            g.invoke({"rel": rel, "sabotage": False, "force": bool(payload.get("force"))}, cfg)
+            st = g.get_state(cfg)
+            laeufe[rel] = {"status": "freigabe" if st.next else "fertig", "thread_id": tid,
+                           "geschrieben": st.values.get("geschrieben", [])}
+        except Exception as exc:
+            laeufe[rel] = {"status": "fehler", "thread_id": tid, "fehler": f"{type(exc).__name__}: {exc}"}
+
+    asyncio.get_running_loop().run_in_executor(None, run)
+    return {"rel": rel, **laeufe[rel]}
+
+
+@app.get(f"{API}/verarbeiten")
+async def verarbeiten_status():
+    return {"laeufe": app.state.__dict__.get("laeufe", {})}
+
+
 # übernommene Routen (Dateien, Lesen, PDF, Suche, Karten, Kalender, Modul, Übersicht, Upload)
 from study_agent.server.dashboard.plugin_api import make_router  # noqa: E402
 
@@ -154,4 +188,5 @@ if DIST.exists():
 async def index():
     if not (DIST / "index.html").exists():
         raise HTTPException(503, "Frontend nicht gebaut: cd web && npm install && npm run build")
-    return FileResponse(DIST / "index.html")
+    # no-cache: nach einem neuen Build lädt der Browser sofort das neue Bundle
+    return FileResponse(DIST / "index.html", headers={"Cache-Control": "no-cache"})

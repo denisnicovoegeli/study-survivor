@@ -297,7 +297,8 @@ def build_parser() -> argparse.ArgumentParser:
     add("ask", cmd_ask, positional("frage", nargs="*"), lambda p: p.add_argument("--thread", default="cli"),
         lambda p: p.add_argument("--user", default="stirling"), switch("--json"))
     add("verarbeiten", cmd_verarbeiten, positional("rel", nargs="?"),
-        lambda p: p.add_argument("--limit", type=int, default=1), switch("--auto"), switch("--fehler"))
+        lambda p: p.add_argument("--limit", type=int, default=1), switch("--auto"), switch("--fehler"),
+        switch("--force"))
     add("freigabe", cmd_freigabe, positional("thread", nargs="?"),
         lambda p: p.add_argument("--decision", choices=["approve", "edit", "reject"], default="approve"),
         lambda p: p.add_argument("--feedback"), switch("--json"))
