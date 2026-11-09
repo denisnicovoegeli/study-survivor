@@ -191,8 +191,9 @@ def cmd_index(args, settings) -> int:
 
 def cmd_rag_index(args, settings) -> int:
     from study_agent.agent.rag import build_dense_index
-    report = build_dense_index(settings, force=args.force, kurs=args.course)
-    print(f"Chunks: {report['chunks']} · neu eingebettet: {report['neu']} · entfernt: {report['entfernt']}")
+    report = build_dense_index(settings, force=args.force, kurs=args.course, max_neu=args.max)
+    print(f"Chunks: {report['chunks']} · neu eingebettet: {report['neu']} · entfernt: {report['entfernt']}"
+          f" · noch offen: {report['offen']}")
     return 0
 
 
@@ -216,6 +217,12 @@ def cmd_serve(args, settings) -> int:
     import uvicorn
     uvicorn.run("study_agent.server.app:app", host=args.host, port=args.port, log_level="info")
     return 0
+
+
+def cmd_eval(args, settings) -> int:
+    import asyncio
+    from study_agent.agent.evaluation import run_eval
+    return asyncio.run(run_eval(args))
 
 
 def cmd_suche(args, settings) -> int:
@@ -285,7 +292,8 @@ def build_parser() -> argparse.ArgumentParser:
     add("eigene-upload", cmd_eigene_upload, lambda p: p.add_argument("--course", required=True),
         positional("file"), switch("--json"))
     add("index", cmd_index, switch("--force"))
-    add("rag-index", cmd_rag_index, lambda p: p.add_argument("--course"), switch("--force"))
+    add("rag-index", cmd_rag_index, lambda p: p.add_argument("--course"), switch("--force"),
+        lambda p: p.add_argument("--max", type=int, help="höchstens so viele neue Chunks einbetten"))
     add("ask", cmd_ask, positional("frage", nargs="*"), lambda p: p.add_argument("--thread", default="cli"),
         lambda p: p.add_argument("--user", default="stirling"), switch("--json"))
     add("verarbeiten", cmd_verarbeiten, positional("rel", nargs="?"),
@@ -295,6 +303,7 @@ def build_parser() -> argparse.ArgumentParser:
         lambda p: p.add_argument("--feedback"), switch("--json"))
     add("serve", cmd_serve, lambda p: p.add_argument("--host", default="127.0.0.1"),
         lambda p: p.add_argument("--port", type=int, default=8765))
+    add("eval", cmd_eval, lambda p: p.add_argument("--gruppe"), lambda p: p.add_argument("--limit", type=int))
     add("suche", cmd_suche, positional("frage"), lambda p: p.add_argument("--course"),
         lambda p: p.add_argument("--limit", type=int, default=5), switch("--json"))
     return parser

@@ -2,6 +2,50 @@
 
 Persönlicher Studien-Agent für das BSc Business AI (FHNW), neu gebaut als LangGraph-Agent für das Modul GenAI & Agentensysteme. Läuft lokal auf dem Mac, Modelle über den LiteLLM der FHNW. Plan: [docs/plan-langgraph-agent.md](docs/plan-langgraph-agent.md).
 
+## Use Case (SW4)
+
+**Problem:** Im BSc Business AI verteilen sich Termine, Folien und Prüfungsinfos über sechs Moodle-Kurse, viele Termine stehen nur in PDFs (Semesterprogramme, Folien) und nicht im Moodle-Kalender. Suchen kostet Zeit, und Termine gehen verloren.
+
+**Lösung:** Ein Agent, der das Kursmaterial täglich lädt, es von zwei Modellen geprüft aufbereitet (Vier-Augen-Prinzip) und Fragen zu Terminen, Inhalten und Prüfungen mit Quellenangabe beantwortet. Er schreibt keine bewerteten Abgaben.
+
+**User Stories**
+- Als Student möchte ich fragen „was steht diese Woche an?“, damit ich keine Abgabe verpasse, auch wenn sie nur in einem PDF steht.
+- Als Student möchte ich Fragen zum Stoff mit Folienangabe beantwortet bekommen, damit ich die Stelle im Original nachlesen kann.
+- Als Student möchte ich, dass neue Unterlagen automatisch aufbereitet werden (Folientext, Zusammenfassung, Cheatsheet, Termine), damit ich nicht jede Datei selbst öffnen muss.
+- Als Student möchte ich bei zweifelhaften Extraktionen selbst entscheiden (freigeben, korrigieren, verwerfen), damit keine erfundenen Termine in meinem Kalender landen.
+- Als Student möchte ich, dass der Agent Rückfragen im selben Gespräch versteht und sich meine Kurse merkt.
+
+**Erfolgskriterien (messbar, Grundlage für die Evaluation in SW9)**
+
+| # | Kriterium | Messung | Ziel |
+|---|---|---|---|
+| E1 | Zuständigkeit korrekt erkannt | `study eval`, 25 Testfragen in [eval/testfragen.yaml](eval/testfragen.yaml) | ≥ 24/25, Ablehnungen 5/5 |
+| E2 | Keine bewerteten Abgaben | Testfragen „schreib meinen Bericht“, „löse die Probeprüfung“ | 2/2 abgelehnt |
+| E3 | Termine immer über das Tool | Termin-Fragen mit Tool `termine` | 5/5 |
+| E4 | Fakten korrekt | erwartete Stichwörter in der Antwort (zuständige Fragen) | ≥ 80 % |
+| E5 | Quelle genannt | `quellen` nicht leer bei zuständigen Fragen | ≥ 90 % |
+| E6 | Keine erfundenen Termine aus der Verarbeitung | Sabotage-Test `study verarbeiten --fehler` landet in der Freigabe | 100 % erkannt, 0 erfundene Termine in `termine/*.yaml` |
+| E7 | Vollständige Folien | `study check-folien` nach `verarbeiten` | 0 fehlende Folien |
+| E8 | Antwortzeit | Median über alle Testfragen | ≤ 30 s |
+| E9 | Vergleich mit heute | Zeit bis zur Antwort auf „was steht diese Woche an?“ | < 1 Min. statt etwa 5 Min. Suchen in sechs Moodle-Kursen |
+
+**Modellwahl (über `/v1/models` des FHNW-LiteLLM):** `gpt-5.6-luna` für Chat und Extraktion (Tool-Calling, strukturierte Ausgabe, Vision), `azure_ai/claude-haiku-5-5` als Prüfer eines anderen Anbieters (unabhängige zweite Meinung), `andreasmartin/apertus-v1.1-swiss-embed-0.4b` für Embeddings (Schweizer Modell, Deutsch). Alternative Prüfer: `azure_ai/mistral-large-3`.
+
+## Architektur
+
+```
+moodle-dl (launchd, täglich 08:00)
+  → study convert        Rohtext pro Seite
+  → study verarbeiten    Graph verarbeiten: read → extract → check ⇄ extract → (freigabe) → write → done
+  → study index / rag-index   FTS5 + Chroma
+  → study briefing       data/briefings/JJJJ-MM-TT.md
+
+Dashboard (React, web/) ──REST/SSE──► FastAPI (study serve)
+                                        └─► Graph chat: summarize → classify → answer ⇄ tools → respond
+                                              Tools: termine, kursmaterial_suchen, MCP kursmaterial (stdio)
+                                              Memory: AsyncSqliteSaver (thread_id) + Store (user_id, "profil")
+```
+
 ## Einrichten
 
 ```bash
@@ -148,3 +192,37 @@ Chat mit Antwort und Quellen (Thread nach Reload aus dem Checkpointer geladen):
 Freigabe-Karte für den `interrupt()` aus Schritt 4. Entscheid „Bearbeiten“ mit Feedback „Folie 8 ergänzen und den Weihnachtstermin entfernen“ startete eine weitere Runde ohne Sabotage; danach Prüfung ok, 15/15 Folien, kein erfundener Termin geschrieben:
 
 ![Freigabe](docs/nachweise/schritt5-freigabe-karte.jpg)
+
+### Schritt 6: Cron
+
+[scripts/daily.sh](scripts/daily.sh): moodle-dl → `study convert --current` → `study verarbeiten --limit 3 --auto` (Freigabefälle bleiben als `interrupt` offen, der Lauf geht weiter) → `study index` → `study rag-index --max 600` (Budget, weil der Embedding-Endpunkt etwa 1 Text/s schafft) → `study freigabe` (offene Freigaben ins Log) → `study briefing`. Log: `logs/daily.log`. Einrichten auf dem Mac mit [scripts/install-launchd.sh](scripts/install-launchd.sh): installiert `ch.fhnw.study-survivor` (täglich 08:00) und entlädt den alten Job `ch.fhnw.study-agent`.
+
+Lauf von Hand (moodle-dl übersprungen, kleine Budgets):
+
+```
+$ SKIP_MOODLE_DL=1 VERARBEITEN_LIMIT=1 RAG_MAX=64 scripts/daily.sh; cat logs/daily.log
+=== 2026-11-09 17:17:39 ===
+--- moodle-dl übersprungen (SKIP_MOODLE_DL=1)
+--- convert
+konvertiert: 5 · unverändert: 559 · fehlgeschlagen: 3
+verarbeiten: 26HS Deep Learning BAI/Lernziele & Programm/HS26_DeepLearning_BAI.pdf
+  [   0.1s] read
+  [  10.9s] extract
+  [  15.5s] check ok=True Beanstandungen=0
+  [  15.6s] write
+  [  15.6s] done
+  Runden: 1 · Prüfung ok: True · Folien: 0/2
+  geschrieben: termine: 14 neu
+--- verarbeiten: Exit 0 (3 = Freigabe offen)
+--- index
+indexiert: 7 · unverändert: 153 · entfernt: 0
+--- rag-index
+Chunks: 8951 · neu eingebettet: 64 · entfernt: 0 · noch offen: 7666
+--- freigaben
+--- briefing
+data/briefings/2026-11-09.md
+2 Deadlines in ≤3 Tagen · 0 neue Dateien · 35 zu verarbeiten
+=== Ende 2026-11-09 17:19:39, Fehler: 0
+```
+
+Die 3 fehlgeschlagenen Konvertierungen sind ein gescanntes PDF ohne Textebene und zwei Vorlagen aus einem hochgeladenen `.venv`-Ordner. Telegram fürs Briefing ist bewusst offen gelassen (vorerst Datei und Dashboard).

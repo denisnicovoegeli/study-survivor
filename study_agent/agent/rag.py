@@ -57,7 +57,7 @@ def _chunk_id(datei: str, folie: str, i: int) -> str:
 
 
 def build_dense_index(settings: Settings | None = None, force: bool = False, kurs: str | None = None,
-                      log=print) -> dict:
+                      max_neu: int | None = None, log=print) -> dict:
     """Liest die Abschnitte aus der FTS-Tabelle und bettet neue Chunks ein (inkrementell über die ID)."""
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -88,11 +88,14 @@ def build_dense_index(settings: Settings | None = None, force: bool = False, kur
     alt = [cid for cid in existing if cid not in chunks]
     if alt:
         vs.delete(ids=alt)
+    offen = len(neu)
+    if max_neu is not None:
+        neu = neu[:max_neu]  # Budget pro Lauf: der Endpunkt schafft etwa 1 Text pro Sekunde
     for start in range(0, len(neu), BATCH):
         batch = neu[start:start + BATCH]
         vs.add_texts([chunks[c][0] for c in batch], metadatas=[chunks[c][1] for c in batch], ids=batch)
-        log(f"  eingebettet {min(start + BATCH, len(neu))}/{len(neu)}")
-    return {"chunks": len(chunks), "neu": len(neu), "entfernt": len(alt)}
+        log(f"  eingebettet {min(start + BATCH, len(neu))}/{len(neu)}", flush=True)
+    return {"chunks": len(chunks), "neu": len(neu), "entfernt": len(alt), "offen": offen - len(neu)}
 
 
 def hybrid_search(frage: str, kurs: str | None = None, k: int = 5, settings: Settings | None = None,
