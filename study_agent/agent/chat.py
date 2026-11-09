@@ -1,6 +1,6 @@
 """Graph `chat`: Fragen zum Studium (SW5 bis SW8).
 
-    START → classify ─┬─ reject ───────────────→ END
+    START → summarize → classify ─┬─ reject ───────────────→ END
                       └─ answer ⇄ tools
                            └──→ respond ───────→ END
 """
@@ -8,16 +8,18 @@ import sys
 from datetime import datetime
 from typing import Annotated, Literal
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage, trim_messages
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.runtime import Runtime
 from langgraph.types import RetryPolicy
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from study_agent.agent import prompts
+from study_agent.agent.memory import Context, get_profil
 from study_agent.agent.tools import LOCAL_TOOLS
 from study_agent.llm import MAIN_MODEL, chat_model
 from study_agent.pipeline.briefing import TZ
@@ -52,6 +54,18 @@ def _current_turn(messages: list[AnyMessage]) -> list[AnyMessage]:
         if isinstance(messages[i], HumanMessage):
             return messages[i:]
     return messages
+
+
+MAX_HISTORY_TOKENS = 6000  # Budget für den Verlauf in `answer` (trim_messages, SW8)
+
+
+def _previous_round(messages: list[AnyMessage]) -> list[AnyMessage]:
+    """Nachrichten der vorigen Runde (vorletzte bis letzte Frage), ohne Tool-Rohdaten."""
+    idx = [i for i, m in enumerate(messages) if isinstance(m, HumanMessage)]
+    if len(idx) < 2:
+        return []
+    return [m for m in messages[idx[-2]:idx[-1]]
+            if isinstance(m, HumanMessage) or (isinstance(m, AIMessage) and m.content)]
 
 
 def _summary_block(state: ChatState) -> str:
@@ -92,6 +106,18 @@ def build_chat_graph(tools, model: str = MAIN_MODEL, checkpointer=None, store=No
     formatter = llm.with_structured_output(AgentResponse, method="json_schema")
     llm_tools = llm.bind_tools(tools)
 
+    async def summarize(state: ChatState):
+        """Fasst ab der zweiten Frage die vorige Runde in `summary` zusammen (SW8)."""
+        prev = _previous_round(state["messages"])
+        if not prev:
+            return {}
+        verlauf = "\n".join(f"{'Student' if isinstance(m, HumanMessage) else 'Assistent'}: {m.content}" for m in prev)
+        msg = await llm.ainvoke([
+            SystemMessage(prompts.SUMMARY_PROMPT.format(summary=state.get("summary") or "(noch keine)")),
+            HumanMessage(f"Neue Runde:\n{verlauf}"),
+        ])
+        return {"summary": msg.content}
+
     async def classify(state: ChatState):
         frage = state["messages"][-1]
         c: Classification = await classifier.ainvoke([
@@ -107,10 +133,18 @@ def build_chat_graph(tools, model: str = MAIN_MODEL, checkpointer=None, store=No
         resp = AgentResponse(answer=prompts.REJECT_TEXT, quellen=[], ergaenzung=False)
         return {"messages": [AIMessage(prompts.REJECT_TEXT)], "response": resp.model_dump(), "tools_used": []}
 
-    async def answer(state: ChatState):
+    async def answer(state: ChatState, runtime: Runtime[Context]):
+        profil = ""
+        if runtime.store is not None:
+            p = await get_profil(runtime.store, runtime.context.user_id if runtime.context else "stirling")
+            profil = (f"\n\n# Profil\n- Aktuelle Kurse: {'; '.join(p.get('kurse', []))}"
+                      f"\n- Bevorzugte Sprache: {p.get('sprache')}")
         system = prompts.SYSTEM_PROMPT.format(
-            heute=datetime.now(TZ).strftime("%A, %d.%m.%Y"), profil="", zusammenfassung=_summary_block(state))
-        msg = await llm_tools.ainvoke([SystemMessage(system), *state["messages"]])
+            heute=datetime.now(TZ).strftime("%A, %d.%m.%Y"), profil=profil, zusammenfassung=_summary_block(state))
+        # Verlauf kürzen; start_on="human", damit kein Tool-Ergebnis ohne seinen Tool-Call übrig bleibt
+        verlauf = trim_messages(state["messages"], max_tokens=MAX_HISTORY_TOKENS, token_counter="approximate",
+                                strategy="last", start_on="human", allow_partial=False)
+        msg = await llm_tools.ainvoke([SystemMessage(system), *verlauf])
         return {"messages": [msg]}
 
     async def respond(state: ChatState):
@@ -124,14 +158,16 @@ def build_chat_graph(tools, model: str = MAIN_MODEL, checkpointer=None, store=No
         resp.answer = final if isinstance(final, str) and final else resp.answer
         return {"response": resp.model_dump(), "tools_used": used}
 
-    g = StateGraph(ChatState)
+    g = StateGraph(ChatState, context_schema=Context)
+    g.add_node("summarize", summarize)
     g.add_node("classify", classify)
     g.add_node("reject", reject)
     g.add_node("answer", answer)
     g.add_node("tools", ToolNode(tools, awrap_tool_call=handle_tool_errors),
                retry_policy=RetryPolicy(max_attempts=3, retry_on=ConnectionError))
     g.add_node("respond", respond)
-    g.add_edge(START, "classify")
+    g.add_edge(START, "summarize")
+    g.add_edge("summarize", "classify")
     g.add_conditional_edges("classify", route, ["answer", "reject"])
     g.add_conditional_edges("answer", tools_condition, {"tools": "tools", END: "respond"})
     g.add_edge("tools", "answer")

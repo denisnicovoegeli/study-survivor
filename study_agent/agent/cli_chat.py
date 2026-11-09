@@ -16,15 +16,18 @@ def _print(state: dict, as_json: bool) -> None:
 
 async def run_ask(args) -> int:
     from study_agent.agent.chat import make_chat_graph
+    from study_agent.agent.memory import Context, open_memory
 
-    graph = await make_chat_graph()
-    config = {"configurable": {"thread_id": args.thread, "user_id": args.user}}
-    fragen = [" ".join(args.frage)] if args.frage else None
-    while True:
-        frage = fragen.pop(0) if fragen else (None if fragen is not None else input("\nDu: ").strip())
-        if not frage:
-            return 0
-        state = await graph.ainvoke({"messages": [("user", frage)]}, config)
-        _print(state, args.json)
-        if fragen is not None and not fragen:
-            return 0
+    async with open_memory() as (saver, store):
+        graph = await make_chat_graph(checkpointer=saver, store=store)
+        config = {"configurable": {"thread_id": args.thread}}
+        context = Context(user_id=args.user)
+        fragen = [" ".join(args.frage)] if args.frage else None
+        while True:
+            frage = fragen.pop(0) if fragen else (None if fragen is not None else input("\nDu: ").strip())
+            if not frage:
+                return 0
+            state = await graph.ainvoke({"messages": [("user", frage)]}, config, context=context)
+            _print(state, args.json)
+            if fragen is not None and not fragen:
+                return 0

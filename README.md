@@ -71,3 +71,25 @@ $ uv run study ask "Lies die Folien zu SW6 Tools und MCP im GenAI-Kurs und nenne
 ```
 
 Tracing: LangSmith über `LANGSMITH_TRACING=true` und `LANGSMITH_API_KEY` in `.env` (Projekt `study-survivor`). Offen: Key eintragen und Trace-Screenshot ergänzen.
+
+### Schritt 3: Memory (SW8)
+
+[memory.py](study_agent/agent/memory.py): `AsyncSqliteSaver` (Paket `langgraph-checkpoint-sqlite`) und `AsyncSqliteStore` in `data/state/memory.sqlite`. Knoten `summarize` vor `classify` fasst ab der zweiten Frage die vorige Runde zusammen; `answer` kürzt den Verlauf mit `trim_messages(..., strategy="last", start_on="human")` und liest das Profil aus dem Store, Namespace `(user_id, "profil")` mit aktuellen Kursen und Sprache. `user_id` kommt über `context=Context(user_id=...)`, der Verlauf über `thread_id`.
+
+Jeder Aufruf ist ein eigener Prozess, also auch ein Neustart:
+
+```
+$ uv run study ask --thread demo "Wann ist die nächste Abgabe im Praxisprojekt?"
+[termine · zuständig: True · Tools: termine]
+Die nächste Abgabe im **Praxisprojekt** ist am **Donnerstag, 26. November 2026**: Sprint 2 Review/Retrospektive
+
+$ uv run study ask --thread demo "Und was muss ich dort genau einreichen?"
+[termine · zuständig: True · Tools: datei_lesen, kursmaterial_suchen]
+Am **Donnerstag, 26. November 2026** musst du einreichen: das **Retrospektiv-Protokoll zu Sprint 2** ...
+
+$ uv run study ask --thread anders "Worüber haben wir eben gesprochen?"
+[sonstiges · zuständig: True · Tools: -]
+In diesem Chat haben wir bisher noch kein Thema besprochen.
+```
+
+Zustand danach: Thread `demo` 10 Nachrichten plus `summary`, Thread `anders` 2 Nachrichten ohne `summary`; Store `("stirling", "profil")` mit den 6 aktuellen Kursen und Sprache „Deutsch (Schweiz)“.
