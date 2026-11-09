@@ -202,6 +202,16 @@ def cmd_ask(args, settings) -> int:
     return asyncio.run(run_ask(args))
 
 
+def cmd_verarbeiten(args, settings) -> int:
+    from study_agent.agent.cli_verarbeiten import cmd_verarbeiten as run
+    return run(args, settings)
+
+
+def cmd_freigabe(args, settings) -> int:
+    from study_agent.agent.cli_verarbeiten import cmd_freigabe as run
+    return run(args, settings)
+
+
 def cmd_suche(args, settings) -> int:
     hits = search(index_db_path(settings.state_dir), args.frage, course=args.course, limit=args.limit)
     if args.json:
@@ -272,6 +282,11 @@ def build_parser() -> argparse.ArgumentParser:
     add("rag-index", cmd_rag_index, lambda p: p.add_argument("--course"), switch("--force"))
     add("ask", cmd_ask, positional("frage", nargs="*"), lambda p: p.add_argument("--thread", default="cli"),
         lambda p: p.add_argument("--user", default="stirling"), switch("--json"))
+    add("verarbeiten", cmd_verarbeiten, positional("rel", nargs="?"),
+        lambda p: p.add_argument("--limit", type=int, default=1), switch("--auto"), switch("--fehler"))
+    add("freigabe", cmd_freigabe, positional("thread", nargs="?"),
+        lambda p: p.add_argument("--decision", choices=["approve", "edit", "reject"], default="approve"),
+        lambda p: p.add_argument("--feedback"), switch("--json"))
     add("suche", cmd_suche, positional("frage"), lambda p: p.add_argument("--course"),
         lambda p: p.add_argument("--limit", type=int, default=5), switch("--json"))
     return parser

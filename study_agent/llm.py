@@ -42,7 +42,8 @@ def chat_model(model: str = MAIN_MODEL, **kw):
     from langchain_openai import ChatOpenAI
 
     # Keine temperature setzen: einige Modelle akzeptieren ueber den Proxy nur den Standardwert.
-    return ChatOpenAI(model=model, base_url=PROXY, api_key=api_key(), timeout=300, max_retries=3, **kw)
+    kw = {"timeout": 180, "max_retries": 2, **kw}
+    return ChatOpenAI(model=model, base_url=PROXY, api_key=api_key(), **kw)
 
 
 def embeddings(model: str = EMBED_MODEL):

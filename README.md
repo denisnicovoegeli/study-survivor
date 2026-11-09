@@ -93,3 +93,41 @@ In diesem Chat haben wir bisher noch kein Thema besprochen.
 ```
 
 Zustand danach: Thread `demo` 10 Nachrichten plus `summary`, Thread `anders` 2 Nachrichten ohne `summary`; Store `("stirling", "profil")` mit den 6 aktuellen Kursen und Sprache „Deutsch (Schweiz)“.
+
+### Schritt 4: Graph `verarbeiten` mit HITL (SW8 Multi-Agent)
+
+[verarbeiten.py](study_agent/agent/verarbeiten.py): `read → extract → check → write → done`, bei Ablehnung zurück zu `extract` (mit Feedback, nur beanstandete Folien neu), nach `MAX_ROUNDS = 2` in `freigabe` mit `interrupt()`. Agent 1 `gpt-5.6-luna` (Vision, strukturierte Ausgabe), Agent 2 `azure_ai/claude-haiku-5-5` prüft gegen den Rohtext; fehlende Folien prüft zusätzlich der Code. Checkpointer `data/state/verarbeiten.sqlite`, ein Thread pro Datei. Ersetzt `study extract`, `regenerate.py` und den Subagenten `folien-extraktor`.
+
+```
+$ uv run study verarbeiten "MAKEathon 2026 – .../Information Session MAKEathon module.pdf" --auto
+  [   0.4s] read
+  [  36.2s] extract
+  [  45.9s] check ok=False Beanstandungen=2
+  [  80.8s] extract
+  [  88.4s] check ok=True Beanstandungen=0
+  [  88.4s] write
+  [  88.4s] done
+  Runden: 2 · Prüfung ok: True · Folien: 10/10
+  geschrieben: data/knowledge/.../Information Session MAKEathon module.pdf.folien.md
+  geschrieben: data/lernen/.../Information Session MAKEathon module.zusammenfassung.md
+  geschrieben: data/lernen/.../Information Session MAKEathon module.cheatsheet.md
+  geschrieben: termine: 14 neu
+
+$ uv run study verarbeiten "Cybersecurity BAI/1_Introduction & Foundations/Course Info.pdf" --auto --fehler
+  [   0.6s] read
+  [  35.9s] extract
+  [  44.8s] check ok=False Beanstandungen=2
+  [  67.5s] extract
+  [  75.9s] check ok=False Beanstandungen=2
+  [  75.9s] __interrupt__
+  FREIGABE nötig (Thread verarbeiten-eba62806aa36) nach 2 Runden:
+    - [fehlt] Folie 8: Seite 8 des Rohtexts (Relevance of Digital Trust, ...) hat im Entwurf keine Folie.
+    - [termin] Folie None: Der Termin 'Pflichtabgabe Weihnachtsbericht' am 2026-12-24 um 18:00 ... steht im Rohtext nicht.
+
+$ uv run study freigabe
+verarbeiten-eba62806aa36  Cybersecurity BAI/1_Introduction & Foundations/Course Info.pdf  (2 Beanstandungen)
+```
+
+`--fehler` ist ein Demo-Schalter: `extract` lässt in jeder Runde eine Folie weg und hängt einen erfundenen Termin an. Entscheid über `study freigabe THREAD --decision approve|edit|reject [--feedback TEXT]` oder die Freigabe-Karte im Dashboard (`Command(resume=...)`). `reject` lässt die Datei offen, `edit` startet eine weitere Runde mit dem Feedback.
+
+Hinweis: Auf dem Mac fehlte `state/verarbeitet.json` (liegt auf dem Pi). Der Stand wurde für Dateien mit vollständiger `.folien.md` bzw. mit Terminen in `termine/*.yaml` rekonstruiert; 38 Dateien sind offen.
