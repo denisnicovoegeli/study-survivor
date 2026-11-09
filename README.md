@@ -226,3 +226,22 @@ data/briefings/2026-11-09.md
 ```
 
 Die 3 fehlgeschlagenen Konvertierungen sind ein gescanntes PDF ohne Textebene und zwei Vorlagen aus einem hochgeladenen `.venv`-Ordner. Telegram fürs Briefing ist bewusst offen gelassen (vorerst Datei und Dashboard).
+
+### Schritt 7: Vorbereitung SW9 (Evaluation, Safeguarding)
+
+25 Testfragen, 5 pro Gruppe (termine, inhalt, pruefung, organisation, nicht zuständig), mit prüfbaren Erwartungen (Zuständigkeit, Kategorie, Tool, Stichwörter, Quelle) in [eval/testfragen.yaml](eval/testfragen.yaml). `uv run study eval [--gruppe G]` misst die Erfolgskriterien E1 bis E5 und E8 aus dem Kapitel Use Case; Antworten landen in `data/eval/` (gitignored).
+
+Baseline vom 09.11.2026:
+
+```
+Zuständigkeit korrekt:      25/25 (100 %)
+Ablehnungen korrekt:        5/5 (100 %)
+Kategorie korrekt:          18/20 (90 %)
+Richtiges Tool:             25/25 (100 %)
+Fakten korrekt:             20/20 (100 %)
+Quelle genannt:             20/20 (100 %)
+Erwartete Quelle:           6/6 (100 %)
+Antwortzeit Median:         8.1 s
+```
+
+Einschränkung: Die Fragen sind mit Blick auf die vorhandenen Daten geschrieben, die Baseline ist also eher optimistisch. Für SW9 (16.11.) geplant: weitere, vorher unbekannte Fragen (auch von Teamkollegen), LLM-as-a-Judge für die Antwortqualität, Safeguarding gegen Prompt Injection im Kursmaterial (Leitplanke steht im System-Prompt, noch ohne Test), Chat-Interface als SW9-Interface.
