@@ -96,6 +96,15 @@ export function Rail() {
         <Icon n="overview" />
       </button>
 
+      <button
+        type="button"
+        className={view === "graph" ? "is-on" : ""}
+        onClick={() => toggleView("graph")}
+        title="LangGraph: wie der Agent gebaut ist"
+      >
+        <Icon n="graph" />
+      </button>
+
 
       <button
         type="button"

@@ -30,6 +30,7 @@ const PATHS = {
   check: "M20 6L9 17l-5-5",
   more: "M5 12h.01M12 12h.01M19 12h.01",
   modul: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  graph: "M6 3a2 2 0 1 0 0 4a2 2 0 0 0 0-4zM18 10a2 2 0 1 0 0 4a2 2 0 0 0 0-4zM6 17a2 2 0 1 0 0 4a2 2 0 0 0 0-4zM7.7 6l8.6 4.9M16.3 13.1L7.7 18M6 7v10",
 };
 
 export function Icon({ n, className = "" }) {

@@ -116,6 +116,13 @@ async def chat_history(thread_id: str = Query(...)):
     return {"thread_id": thread_id, "messages": out}
 
 
+@app.get(f"{API}/graphs")
+async def graphs():
+    """Diagramme (Mermaid aus dem Code) und Erklärtexte für die Ansicht «LangGraph»."""
+    from study_agent.server.graph_info import graph_info
+    return graph_info({"chat": app.state.chat, "verarbeiten": app.state.verarbeiten})
+
+
 @app.get(f"{API}/freigaben")
 async def freigaben():
     from study_agent.agent.verarbeiten import open_freigaben

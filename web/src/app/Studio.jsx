@@ -14,6 +14,7 @@ import { Calendar } from "../plan/Calendar.jsx";
 import { Overview } from "../plan/Overview.jsx";
 import { Search } from "../plan/Search.jsx";
 import { ModulView } from "../modul/ModulView.jsx";
+import { GraphView } from "../graph/GraphView.jsx";
 import { ChatPanel } from "../chat/ChatPanel.jsx";
 import { UploadModal } from "../upload/UploadModal.jsx";
 import { ErrorBoundary } from "../ui/ErrorBoundary.jsx";
@@ -176,6 +177,9 @@ function StudioLayout() {
     case "modul":
       mainContent = <ModulView />;
       break;
+    case "graph":
+      mainContent = <GraphView />;
+      break;
     case "search":
       mainContent = <Search />;
       break;
@@ -195,6 +199,7 @@ function StudioLayout() {
     { id: "search", icon: "search", label: "Suche" },
     { id: "modul", icon: "modul", label: "Modulübersicht" },
     { id: "overview", icon: "overview", label: "Übersicht" },
+    { id: "graph", icon: "graph", label: "LangGraph" },
   ];
   const moreActive = mobilePane === "doc" && moreItems.some((m) => m.id === view && m.id !== "read");
 
