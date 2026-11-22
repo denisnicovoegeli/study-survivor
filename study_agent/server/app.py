@@ -84,7 +84,13 @@ async def chat(payload: dict = Body(...)):
             yield _sse("error", {"message": "Der Agent hat zu viele Schritte gebraucht und abgebrochen. "
                                             "Formuliere die Frage enger oder frag in einem neuen Chat."})
         except Exception as exc:  # Fehler als Event, damit das Frontend etwas anzeigen kann
-            yield _sse("error", {"message": f"{type(exc).__name__}: {exc}"})
+            from study_agent.agent.evaluation import vom_anbieter_blockiert
+            if vom_anbieter_blockiert(exc):
+                yield _sse("error", {"message": "Der Inhaltsfilter des Modellanbieters hat die Anfrage blockiert, "
+                                                "vermutlich wegen verdächtiger Anweisungen in einem gefundenen Dokument. "
+                                                "Formuliere die Frage anders oder wähle das Dokument im Modul ab."})
+            else:
+                yield _sse("error", {"message": f"{type(exc).__name__}: {exc}"})
 
     return StreamingResponse(events(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
