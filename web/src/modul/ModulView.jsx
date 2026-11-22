@@ -3,6 +3,7 @@ import React from "react";
 import { useStudio } from "../app/store.jsx";
 import { Icon } from "../ui/Icon.jsx";
 import { Loading } from "../ui/Loading.jsx";
+import { QuellenKarte } from "./QuellenKarte.jsx";
 import "./modul.css";
 
 const { useState, useEffect, useCallback } = React;
@@ -24,7 +25,55 @@ function formatEventDate(ev) {
   return `${day}${time}`;
 }
 
-export function ModulView({ course: courseProp }) {
+const ART_TEXT = { pruefung: "Prüfung", abgabe: "Abgabe", praesentation: "Präsentation", modul: "Leistungsnachweis" };
+
+function datumLang(iso) {
+  const [j, m, t] = iso.split("-").map(Number);
+  return new Date(j, m - 1, t).toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+
+// Prüfung, Abgaben und Präsentationen, pro Tag zusammengefasst; vergangene ausgegraut
+function WichtigeDaten({ daten }) {
+  if (!daten.length) {
+    return <span className="stu-muted">Noch keine Prüfungs-, Abgabe- oder Präsentationsdaten bekannt.</span>;
+  }
+  const tage = [];
+  for (const d of daten) {
+    const letzter = tage[tage.length - 1];
+    if (letzter && letzter.datum === d.datum) letzter.eintraege.push(d);
+    else tage.push({ datum: d.datum, vergangen: d.vergangen, eintraege: [d] });
+  }
+  return (
+    <ul className="mv-daten">
+      {tage.map((t) => (
+        <li key={t.datum} className={t.vergangen ? "is-vergangen" : ""}>
+          <span className="mv-daten-tag">{datumLang(t.datum)}</span>
+          <span className="mv-daten-texte">
+            {t.eintraege.map((e, i) => (
+              <span key={i} className="mv-daten-eintrag">
+                <span className={"mv-art is-" + e.art}>{ART_TEXT[e.art] || e.art}</span> {e.text}
+              </span>
+            ))}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// «Datei, Folie 3» … → [[Datei, ["Folie 3", …]], …]
+function quellenNachDatei(quellen) {
+  const map = new Map();
+  for (const q of quellen) {
+    const m = String(q).match(/^(.*?),\s*((?:Seite|Seiten|Folie|Folien)\b.*)$/);
+    const datei = (m ? m[1] : String(q)).trim();
+    if (!map.has(datei)) map.set(datei, []);
+    if (m && !map.get(datei).includes(m[2])) map.get(datei).push(m[2]);
+  }
+  return [...map.entries()];
+}
+
+export function ModulView({ course: courseProp, onBack }) {
   const { api, course: activeCourse, setCourse, courses, toast } = useStudio();
   const currentCourse = courseProp || activeCourse || (courses[0]?.name || courses[0] || "");
 
@@ -74,7 +123,6 @@ export function ModulView({ course: courseProp }) {
 
   const ln = data.leistungsnachweis || {};
   const termine = data.termine || [];
-  const fortschritt = data.fortschritt || { wochen: [], gesamt: { verarbeitet: 0, offen: 0, total: 0, prozent: 100 } };
   const noten = data.noten;
   const pruefung = data.pruefung || {};
   const projekt = data.projekt || {};
@@ -92,6 +140,9 @@ export function ModulView({ course: courseProp }) {
       {/* Header mit Kursauswahl falls mehrere vorhanden */}
       <div className="stu-modul-header">
         <div>
+          {onBack ? (
+            <button type="button" className="stu-tbtn mu-zurueck" onClick={onBack}>← Alle Module</button>
+          ) : null}
           <h1 className="stu-modul-title">{data.course}</h1>
           <span className="stu-muted" style={{ fontSize: "13px" }}>
             Modul-Cockpit und Leistungsnachweis
@@ -163,37 +214,23 @@ export function ModulView({ course: courseProp }) {
               </div>
             )}
 
-            {ln.daten && ln.daten.length > 0 && (
-              <div className="stu-modul-field stu-modul-field--block">
-                <span className="stu-modul-label">Prüfungsdaten:</span>
-                <ul className="stu-modul-daten-list">
-                  {ln.daten.map((dItem, dIdx) => {
-                    const m = String(dItem).match(/^(\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})\s*[:–-]?\s*(.*)$/);
-                    if (m) {
-                      return (
-                        <li key={dIdx} className="stu-modul-daten-item">
-                          <span className="stu-modul-daten-date">{m[1]}</span>
-                          <span className="stu-modul-daten-text">{m[2]}</span>
-                        </li>
-                      );
-                    }
-                    return (
-                      <li key={dIdx} className="stu-modul-daten-item">
-                        <span className="stu-modul-daten-text">{dItem}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+            <div className="stu-modul-field stu-modul-field--block">
+              <span className="stu-modul-label">Wichtige Daten:</span>
+              <WichtigeDaten daten={data.wichtige_daten || []} />
+            </div>
 
             {ln.quellen && ln.quellen.length > 0 && (
-              <div className="stu-modul-field">
-                <span className="stu-modul-label">Quellen:</span>
-                <span className="stu-muted" style={{ fontSize: "12.5px", textAlign: "left" }}>
-                  {ln.quellen.join("; ")}
-                </span>
-              </div>
+              <details className="mv-quellen">
+                <summary>Woher diese Angaben stammen ({quellenNachDatei(ln.quellen).length} Dokumente)</summary>
+                <ul>
+                  {quellenNachDatei(ln.quellen).map(([datei, stellen]) => (
+                    <li key={datei}>
+                      <span className="mv-quelle-datei">{datei}</span>
+                      {stellen.length ? <span className="stu-muted"> · {stellen.join(", ")}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </details>
             )}
 
             {/* Notenbox falls vorhanden */}
@@ -256,50 +293,8 @@ export function ModulView({ course: courseProp }) {
         </div>
       </div>
 
-      {/* Fortschritt pro Woche */}
-      <div className="stu-modul-card" style={{ marginBottom: "24px" }}>
-        <h2 className="stu-modul-card-title">
-          <Icon n="board" />
-          <span>
-            Verarbeitungsfortschritt ({fortschritt.gesamt.verarbeitet} von {fortschritt.gesamt.total} verarbeitet, {fortschritt.gesamt.prozent}%)
-          </span>
-        </h2>
-
-        <div className="stu-modul-progress-bar">
-          <div
-            className="stu-modul-progress-fill"
-            style={{ width: `${Math.min(100, Math.max(0, fortschritt.gesamt.prozent))}%` }}
-          />
-        </div>
-
-        {fortschritt.wochen && fortschritt.wochen.length > 0 ? (
-          <div className="stu-modul-weeks">
-            {fortschritt.wochen.map((w, idx) => (
-              <div key={idx} className="stu-modul-week-row">
-                <span className="stu-modul-week-tag">{w.week_label}</span>
-                <span className="stu-muted" style={{ flex: 1, margin: "0 12px" }}>
-                  {w.section !== w.week_label ? w.section : ""}
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span className="stu-modul-week-counts">
-                    {w.verarbeitet} verarbeitet / {w.offen} offen
-                  </span>
-                  <span
-                    className={`stu-modul-badge ${w.offen === 0 && w.verarbeitet > 0 ? "is-pruefung" : ""}`}
-                    style={{ minWidth: "42px", textAlign: "center" }}
-                  >
-                    {w.prozent}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="stu-muted" style={{ fontSize: "13.5px" }}>
-            Noch keine Wochenabschnitte erfasst.
-          </p>
-        )}
-      </div>
+      {/* Quellen des Agenten, nach Moodle-Abschnitt */}
+      <QuellenKarte course={data.course} />
 
       {/* Einklappbare Details: Prüfung & Projekt */}
       <details className="stu-modul-details" open>

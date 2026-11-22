@@ -76,6 +76,8 @@ def test_upcoming_keeps_today_drops_past_and_far_future(tmp_path):
           "  - {datum: 2026-10-07, titel: Heute}\n")
     events, _ = load_termine(tmp_path)
     assert [e.name for e in upcoming_termine(events, NOW, days=14)] == ["Heute", "Bald"]
+    # Kalender: auch vergangene Tage
+    assert [e.name for e in upcoming_termine(events, NOW, days=14, vergangen=3)] == ["Gestern", "Heute", "Bald"]
 
 
 def test_merge_drops_only_duplicate_submissions():
@@ -99,3 +101,27 @@ def test_merge_falls_back_to_normalised_names():
     due = datetime(2026, 10, 29, 22, 59, tzinfo=timezone.utc)
     moodle = [Deadline("3-26HS.W-B-BAI-000405.EN/VZTZ Praxisprojekt", "Retro", due, "u", "assign", False)]
     assert merge_deadlines(moodle, [local("3-26HS.W-B-BAI-000405.EN⧸VZTZ Praxisprojekt", due, "abgabe")]) == moodle
+
+
+def test_zusammenfuehren_gleiche_termine_aus_zwei_quellen(tmp_path):
+    from study_agent.pipeline.termine import zusammenfuehren
+    write(tmp_path, "m.yaml", "kurs: Marketing\ntermine:\n"
+          "  - {datum: 2026-11-16, zeit: '08:15', art: praesenz, quelle: Semesterprogramm.pdf,"
+          " titel: 'Entscheidungen der Vertriebspolitik; Gastvortrag von Muster AG; Coaching; Präsenzpflicht'}\n"
+          "  - {datum: 2026-11-16, zeit: '08:15', art: lektion, quelle: Plan.pdf,"
+          " titel: 'Entscheidungen der Vertriebspolitik; Präsenzpflicht und Gastvortrag'}\n"
+          "  - {datum: 2026-11-30, art: praesentation, quelle: A.pdf, titel: 'Schlusspräsentation – möglicher Termin/Slot'}\n"
+          "  - {datum: 2026-11-30, art: praesentation, quelle: B.pdf, titel: 'Schlusspräsentation, Gruppen 1, 4 und 9'}\n"
+          "  - {datum: 2026-11-23, zeit: '13:15', art: praesentation, titel: 'Präsentationsblock A'}\n"
+          "  - {datum: 2026-11-23, zeit: '13:15', art: praesenz, titel: 'Anwesenheit pro Präsentationsblock'}\n"
+          "  - {datum: 2026-11-17, zeit: '08:15', art: lektion, titel: 'Entscheidungen der Vertriebspolitik'}\n")
+    events, _ = load_termine(tmp_path)
+    z = zusammenfuehren(events)
+    assert len(z) == 5  # zwei Paare verbunden, ungleicher Kern und anderer Tag bleiben getrennt
+    v = next(e for e in z if e.due.day == 16)
+    assert v.kind == "praesenz" and v.source == "Semesterprogramm.pdf; Plan.pdf"
+    assert v.name.startswith("Entscheidungen der Vertriebspolitik; Gastvortrag") and "·" not in v.name
+    assert v.titel_original == v.name
+    s = next(e for e in z if e.due.day == 30)
+    assert s.name == "Schlusspräsentation – möglicher Termin/Slot · Gruppen 1, 4 und 9"
+    assert s.titel_original == "Schlusspräsentation – möglicher Termin/Slot"

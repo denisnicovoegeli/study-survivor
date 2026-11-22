@@ -9,7 +9,7 @@
 - extract (Agent 1, Vision-Modell): Folientext, Zusammenfassung, Cheatsheet, Info-JSON.
 - check (Agent 2, anderes Modell eines anderen Anbieters): prüft gegen den Rohtext.
 - freigabe (HITL): interrupt() mit Entwurf und Beanstandung, Entscheid approve | edit | reject.
-- write, done (Code): Dateien schreiben, Termine ergänzen, `study done`.
+- write, done (Code): Dateien schreiben, Termine ergänzen, `study done`, Suchindex nachführen.
 """
 import base64
 import hashlib
@@ -111,7 +111,9 @@ class Modul(BaseModel):
     gewichtung: str | None = None
     dauer: str | None = None
     hilfsmittel: str | None = None
-    daten: list[str] = []
+    daten: list[str] = Field(default=[], description=(
+        "Nur Daten des Leistungsnachweises (Prüfung, Abgaben, Präsentationen, Projektmeilensteine) als "
+        "'YYYY-MM-DD Beschreibung'. Keine gewöhnlichen Unterrichtstermine, kein Datum ohne Beschreibung."))
     quellen: list[str] = []
 
 
@@ -409,18 +411,47 @@ def write(state: VState):
     return {"geschrieben": out}
 
 
+DENSE_MAX = 300  # neue Chunks pro verarbeiteter Datei (ein Foliensatz hat meist 50 bis 150)
+
+
+def suchindex_nachfuehren(settings, kurs: str, dense=None) -> str:
+    """Neue .folien.md sofort durchsuchbar machen, nicht erst beim nächsten täglichen Lauf.
+
+    Volltext (BM25) ist lokal und schnell. Der semantische Index braucht den Embedding-Endpunkt;
+    scheitert er, bleibt die Datei per Volltext auffindbar und der nächste Lauf holt den Rest nach.
+    """
+    from study_agent.pipeline.suche import build_index
+
+    r = build_index(settings.knowledge_dir, settings.state_dir)
+    teile = [f"suchindex: {len(r.indexed)} neu"]
+    try:
+        if dense is None:
+            from study_agent.agent.rag import build_dense_index as dense
+        d = dense(settings, kurs=kurs, max_neu=DENSE_MAX, log=lambda *a, **k: None)
+        teile.append(f"semantisch: {d['neu']} neu")
+    except Exception as exc:  # noqa: BLE001 Volltext reicht, Rest im nächsten Lauf
+        teile.append(f"semantisch: später ({type(exc).__name__})")
+    return " · ".join(teile)
+
+
 def done(state: VState):
     """Code: Datei als verarbeitet markieren (`study done`). Bei Route voll nur mit vollständiger .folien.md."""
     from study_agent.cli import _overrides
     from study_agent.pipeline.pending import finish
 
     s = load_settings()
+    geschrieben = list(state.get("geschrieben", []))
     try:
         finish(s, state["rel"], _overrides(s))
     except ValueError as exc:
         # Nach einer Freigabe trotz fehlender Folien bleibt die Datei offen
-        return {"geschrieben": [*state.get("geschrieben", []), f"nicht abgeschlossen: {exc}"]}
-    return {}
+        geschrieben.append(f"nicht abgeschlossen: {exc}")
+    # Auch unvollständige Folien-Notizen sind besser durchsuchbar als nur der Rohtext
+    try:
+        geschrieben.append(suchindex_nachfuehren(s, state["rel"].split("/", 1)[0]))
+    except Exception as exc:  # noqa: BLE001 der tägliche Lauf indexiert ohnehin
+        geschrieben.append(f"suchindex: später ({type(exc).__name__})")
+    return {"geschrieben": geschrieben}
 
 
 def build_verarbeiten_graph(checkpointer=None):

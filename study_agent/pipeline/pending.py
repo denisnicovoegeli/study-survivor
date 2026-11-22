@@ -6,6 +6,7 @@ from pathlib import Path
 
 from study_agent.pipeline.classify import ROUTES
 from study_agent.config import Settings
+from study_agent.einstellungen import laden as laden_einstellungen, ueberspringen_grund
 from study_agent.pipeline.convert import folien_path, knowledge_path, load_manifest
 from study_agent.pipeline.eigene import EigeneFile
 from study_agent.pipeline.moodle_db import FileRecord
@@ -45,6 +46,10 @@ def pending_files(settings: Settings, records: list[FileRecord], overrides: dict
                   eigene: list[EigeneFile] | None = None, include_done: bool = False) -> list[PendingFile]:
     manifest = load_manifest(settings.knowledge_dir)
     done = read_done(settings.state_dir)
+    e = laden_einstellungen(settings.state_dir)
+    filt = {**e["filter"], "archiv": e["semester"]["archiv"]}
+    from study_agent.pipeline.ausschluss import laden as laden_ausschluss
+    aus = laden_ausschluss(settings.state_dir)  # im Dashboard abgewählt: nicht zusammenfassen
     seen: set[str] = set()
     out = []
     for r in records:
@@ -53,12 +58,14 @@ def pending_files(settings: Settings, records: list[FileRecord], overrides: dict
             continue
         key = rel.as_posix()
         entry = manifest.get(key)
-        if entry is None or key in seen:
+        if entry is None or key in seen or key in aus:
             continue
         seen.add(key)
         klasse = overrides.get(key, entry["klasse"])
         route = ROUTES.get(klasse)
         if route is None or (not include_done and done.get(key) == entry["sig"]):
+            continue
+        if ueberspringen_grund(filt, r.course, rel.name, settings.data_dir / rel, route):
             continue
         out.append(PendingFile(
             rel=key, course=r.course, course_id=r.course_id, section=r.section, name=rel.name, klasse=klasse,
@@ -74,12 +81,14 @@ def pending_files(settings: Settings, records: list[FileRecord], overrides: dict
             continue
         key = rel.as_posix()
         entry = manifest.get(key)
-        if entry is None or key in seen:
+        if entry is None or key in seen or key in aus:
             continue
         seen.add(key)
         klasse = overrides.get(key, entry["klasse"])
         route = ROUTES.get(klasse)
         if route is None or (not include_done and done.get(key) == entry["sig"]):
+            continue
+        if ueberspringen_grund(filt, e.course, rel.name, e.path, route):
             continue
         # Eigene Dateien haben keinen Moodle-Kurs und keinen Abschnitt; Lernartefakte
         # landen direkt unter lernen/<Kurs>/.

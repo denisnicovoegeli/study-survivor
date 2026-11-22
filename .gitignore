@@ -10,3 +10,6 @@ data/
 node_modules/
 web/dist/
 logs/
+
+# lokale Startkonfiguration der Vorschau (Claude Code)
+.claude/launch.json

@@ -1,6 +1,6 @@
 # Study Survivor: Study Agent mit LangGraph
 
-Persönlicher Studien-Agent für das BSc Business AI (FHNW), neu gebaut als LangGraph-Agent für das Modul GenAI & Agentensysteme. Läuft lokal auf dem Mac, Modelle über den LiteLLM der FHNW. Plan: [docs/plan-langgraph-agent.md](docs/plan-langgraph-agent.md).
+Persönlicher Studien-Agent für das BSc Business AI (FHNW), neu gebaut als LangGraph-Agent für das Modul GenAI & Agentensysteme. Läuft lokal auf dem Mac, Modelle über den LiteLLM der FHNW.
 
 ## Use Case (SW4)
 
@@ -34,7 +34,7 @@ Persönlicher Studien-Agent für das BSc Business AI (FHNW), neu gebaut als Lang
 ## Architektur
 
 ```
-moodle-dl (launchd, täglich 08:00)
+moodle-dl (launchd, Zeitplan im Dashboard)
   → study convert        Rohtext pro Seite
   → study verarbeiten    Graph verarbeiten: read → extract → check ⇄ extract → (freigabe) → write → done
   → study index / rag-index   FTS5 + Chroma
@@ -59,7 +59,14 @@ Kursdateien lädt moodle-dl nach `~/Apps/moodle-dl` (Pfad über `STUDY_DATA_DIR`
 
 - `uv run study deadlines|termine|grades|courses|new-files` (Pipeline aus study-agent)
 - `uv run study convert`, `study pending`, `study done REL`, `study index`, `study suche FRAGE`, `study briefing`
+- `uv run study einstellungen [--get SCHLÜSSEL]`, `study zeitplan [status|ein|aus|anwenden]` (Agent-Einstellungen, täglicher Lauf)
 - Tests: `uv run pytest`
+
+Im Dashboard: **Module** zeigt alle Moodle-Kurse und eigene Module (Ordner `_eigene/<Name>/` im moodle-dl-Ordner, für Fächer ohne Moodle); hochgeladene Dateien verarbeitet der Agent wie Moodle-Material. **Studium** sammelt modulübergreifende Dokumente in `data/studium/` und übernimmt Prüfungen aus dem Prüfungsplan der Hochschule (.xlsx) als `art: pruefung` in `termine/<Kurs>.yaml`.
+
+**Lernen → Lernplan** verteilt die Themen (Abschnitte) jedes Moduls mit Prüfung im Kalender auf die Wochen bis zur Prüfung; die Woche vor der Prüfung ist Wiederholung. Abgehakte Themen (`data/state/lernplan.json`) fallen weg, der Rest verteilt sich neu. **Semesterwechsel** (unter Module) archiviert alte Module (`semester.archiv` in den Einstellungen): Sie bleiben lesbar, der Agent verarbeitet sie nicht mehr. **Benachrichtigungen** (Agent → Einstellungen) meldet nach dem Briefing neues Material, nahe Fristen und offene Freigaben auf dem Mac und, wenn ein Thema gesetzt ist, per [ntfy](https://ntfy.sh) aufs Handy. **Texterkennung:** `study convert --ocr N` lässt bis zu N eingescannte PDFs ohne Text vom Vision-Modell abschreiben (`verarbeitung.ocr_pro_lauf`, Standard 1 pro Lauf).
+
+**Quellen des Agenten** (im Modul) listet jede Datei aus Moodle und jeden eigenen Upload nach Moodle-Abschnitt: grün, wenn sie im Suchindex steht und der Chat-Agent sie findet; dazu, ob sie zusammengefasst ist, und bei nicht genutzten Einträgen den Grund (Link, Archiv, nicht heruntergeladen, ohne Text). Daten: `GET /quellen?kurs=…` (`study_agent/pipeline/quellen.py`). **Moodle aktualisieren** (unter Module und im Modul) startet im Hintergrund moodle-dl, `convert --current`, `index` und `rag-index` (`POST /moodle/aktualisieren`, Status per GET). Ohne Zusammenfassung durch das Modell, die macht weiter der tägliche Lauf oder der Knopf „verarbeiten“. Die Ausgabe landet nur in `logs/moodle-aktualisieren.log`; läuft gerade `daily.sh`, startet der Knopf nicht.
 
 ## Regeln
 
@@ -185,17 +192,11 @@ uv run study serve      # http://localhost:8765
 
 FastAPI-App [study_agent/server/app.py](study_agent/server/app.py) mit den übernommenen Routen aus dem Hermes-Plugin (Dateien, Lesen und PDF, Suche, Karten, Kalender, Modul, Übersicht, Upload; ohne Projekte, Kanban und Auftragsbrett) unter demselben Pfad `/api/plugins/studium/`. Neu: `POST /chat` (Server-Sent Events: `step`, `tool`, `token`, `final`), `GET /chat/threads`, `GET /chat/history`, `GET /freigaben`, `POST /freigaben/{thread_id}` (`Command(resume={decision, feedback})`). Frontend [web/](web/) als eigenständige Vite-App mit React 19; `SDK.authedFetch` durch `fetch` ersetzt, der Hermes-Gateway durch einen SSE-Client ([sse.js](web/src/chat/sse.js), [ChatPanel.jsx](web/src/chat/ChatPanel.jsx)).
 
-Chat mit Antwort und Quellen (Thread nach Reload aus dem Checkpointer geladen):
-
-![Chat](docs/nachweise/schritt5-chat-antwort-quellen.jpg)
-
-Freigabe-Karte für den `interrupt()` aus Schritt 4. Entscheid „Bearbeiten“ mit Feedback „Folie 8 ergänzen und den Weihnachtstermin entfernen“ startete eine weitere Runde ohne Sabotage; danach Prüfung ok, 15/15 Folien, kein erfundener Termin geschrieben:
-
-![Freigabe](docs/nachweise/schritt5-freigabe-karte.jpg)
+Freigabe-Karte für den `interrupt()` aus Schritt 4. Entscheid „Bearbeiten“ mit Feedback „Folie 8 ergänzen und den Weihnachtstermin entfernen“ startete eine weitere Runde ohne Sabotage; danach Prüfung ok, 15/15 Folien, kein erfundener Termin geschrieben.
 
 ### Schritt 6: Cron
 
-[scripts/daily.sh](scripts/daily.sh): moodle-dl → `study convert --current` → `study verarbeiten --limit 3 --auto` (Freigabefälle bleiben als `interrupt` offen, der Lauf geht weiter) → `study index` → `study rag-index --max 600` (Budget, weil der Embedding-Endpunkt etwa 1 Text/s schafft) → `study freigabe` (offene Freigaben ins Log) → `study briefing`. Log: `logs/daily.log`. Einrichten auf dem Mac mit [scripts/install-launchd.sh](scripts/install-launchd.sh): installiert `ch.fhnw.study-survivor` (täglich 08:00) und entlädt den alten Job `ch.fhnw.study-agent`.
+[scripts/daily.sh](scripts/daily.sh): moodle-dl → `study convert --current --ocr 1` → `study verarbeiten --limit 3 --auto` (Freigabefälle bleiben als `interrupt` offen, der Lauf geht weiter) → `study index` → `study rag-index --max 600` (Budget, weil der Embedding-Endpunkt etwa 1 Text/s schafft) → `study freigabe` (offene Freigaben ins Log) → `study briefing`. Log: `logs/daily.log`. Höchstens ein Lauf pro Tag (`DAILY_FORCE=1` erzwingt einen weiteren); Dateien pro Lauf und Index-Budget kommen aus `data/state/einstellungen.yaml`. Einrichten im Dashboard unter Agent → Zeitplan (Uhrzeit, Wochentage, ein/aus) oder mit `study zeitplan ein` bzw. [scripts/install-launchd.sh](scripts/install-launchd.sh): schreibt `~/Library/LaunchAgents/ch.fhnw.study-survivor.plist` aus den Einstellungen, lädt ihn und entlädt den alten Job `ch.fhnw.study-agent`. `study zeitplan` zeigt den Stand, `study zeitplan aus` entfernt den Job.
 
 Lauf von Hand (moodle-dl übersprungen, kleine Budgets):
 

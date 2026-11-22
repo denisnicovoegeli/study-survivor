@@ -16,7 +16,7 @@ from study_agent.pipeline.moodle_api import MoodleClient, MoodleError
 from study_agent.pipeline.moodle_db import MoodleDbError, all_files, courses, current_courses, files_since, read_last_file_id
 from study_agent.pipeline.pending import check_folien, finish, pending_files
 from study_agent.pipeline.suche import (build_index, index_db_path, moodle_links, search, treffer_json)
-from study_agent.pipeline.termine import load_termine, upcoming_termine
+from study_agent.pipeline.termine import load_termine, upcoming_termine, zusammenfuehren
 
 
 def _site_url(settings) -> str:
@@ -54,7 +54,7 @@ def cmd_deadlines(args, settings) -> int:
 
 def cmd_termine(args, settings) -> int:
     events, errors = load_termine(settings.termine_dir)
-    events = upcoming_termine(events, datetime.now(timezone.utc), args.days)
+    events = zusammenfuehren(upcoming_termine(events, datetime.now(timezone.utc), args.days, args.vergangen))
     if args.json:
         _print_json(events)
     else:
@@ -107,11 +107,19 @@ def cmd_convert(args, settings) -> int:
     if args.current:
         ids = _current_ids(settings)
         folders = {rel.parts[0] for r in records if r.course_id in ids and (rel := r.rel(settings.data_dir))}
+    ocr = None
+    if args.ocr:
+        from study_agent.pipeline.ocr import ocr_pages, vision_transkribierer
+        transkribieren = vision_transkribierer()
+        ocr = lambda path: ocr_pages(path, transkribieren)  # noqa: E731
     report = convert_tree(settings.data_dir, settings.knowledge_dir, markitdown_converter(), force=args.force,
                           course_filter=args.course, courses=folders,
-                          meta=meta_from_records(records, settings.data_dir, site))
+                          meta=meta_from_records(records, settings.data_dir, site), ocr=ocr, ocr_limit=args.ocr)
     write_course_indexes(settings.knowledge_dir, settings.data_dir, records, site, _overrides(settings))
-    print(f"konvertiert: {len(report.converted)} · unverändert: {report.skipped} · fehlgeschlagen: {len(report.failed)}")
+    print(f"konvertiert: {len(report.converted)} · unverändert: {report.skipped} · fehlgeschlagen: {len(report.failed)}"
+          + (f" · Texterkennung: {len(report.ocr)}" if report.ocr else ""))
+    for key in report.ocr:
+        print(f"  👁 {key}: per Texterkennung gelesen")
     for key, reason in report.failed:
         print(f"  ✗ {key}: {reason}")
     sys.stdout.flush()
@@ -159,6 +167,50 @@ def cmd_klasse(args, settings) -> int:
         print(f"FEHLER {exc}", file=sys.stderr)
         return 1
     print(f"{args.rel}: {args.klasse}")
+    return 0
+
+
+def cmd_einstellungen(args, settings) -> int:
+    from study_agent import einstellungen
+    e = einstellungen.laden(settings.state_dir)
+    if args.get:
+        try:
+            value = einstellungen.wert(e, args.get)
+        except KeyError:
+            print(f"FEHLER unbekannte Einstellung: {args.get}", file=sys.stderr)
+            return 1
+        print(json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else
+              str(value).lower() if isinstance(value, bool) else value)
+        return 0
+    print(json.dumps(e, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_zeitplan(args, settings) -> int:
+    """Zeigt den Zeitplan oder richtet den launchd-Job aus den Einstellungen ein."""
+    from study_agent import einstellungen, zeitplan
+    z = einstellungen.laden(settings.state_dir)["zeitplan"]
+    if args.aktion in ("ein", "aus"):
+        e = einstellungen.laden(settings.state_dir)
+        e["zeitplan"]["aktiv"] = args.aktion == "ein"
+        z = einstellungen.speichern(settings.state_dir, e)["zeitplan"]
+    if args.aktion != "status":
+        try:
+            if zeitplan.anwenden(z).get("alter_job_deaktiviert"):
+                print(f"alter Job {zeitplan.ALT_LABEL} entladen und deaktiviert (plist bleibt liegen)")
+        except (OSError, RuntimeError) as exc:
+            print(f"FEHLER {exc}", file=sys.stderr)
+            return 1
+    st = zeitplan.status(z)
+    if not (z["aktiv"] and z["tage"]):
+        print("Zeitplan aus: kein täglicher Lauf eingerichtet")
+    else:
+        tage = "täglich" if len(z["tage"]) == 7 else ", ".join(z["tage"])
+        zustand = "eingerichtet" if st["stimmt"] else "nicht eingerichtet (study zeitplan anwenden)"
+        print(f"Zeitplan {tage} {z['zeit']}: {zustand}")
+    if st["letzter_lauf"]:
+        l = st["letzter_lauf"]
+        print(f"letzter Lauf {l['start']}, " + ("läuft noch" if l["ende"] is None else f"Fehler: {l['fehler']}"))
     return 0
 
 
@@ -241,21 +293,52 @@ def cmd_suche(args, settings) -> int:
     return 0
 
 
-def cmd_briefing(args, settings) -> int:
-    # --print: ganzes Briefing als Markdown auf stdout (z. B. für Telegram), nie eine macOS-Benachrichtigung
-    quiet = args.no_notify or args.print
+def _offene_freigaben() -> int:
     try:
-        path, summary = run_briefing(settings, _client(settings), _site_url(settings), days=args.days)
+        from study_agent.agent.cli_verarbeiten import graph
+        from study_agent.agent.verarbeiten import open_freigaben
+        return len(open_freigaben(graph()))
+    except Exception:  # Checkpoint-DB fehlt oder ist gesperrt: Mitteilung trotzdem schicken
+        return 0
+
+
+def _melden(settings, info: dict, fehler: str | None = None) -> None:
+    from study_agent import benachrichtigung
+    from study_agent.einstellungen import laden
+
+    b = laden(settings.state_dir)["benachrichtigungen"]
+    if not b["mac"] and not b["ntfy_thema"]:
+        return
+    now = datetime.now(timezone.utc)
+    m = benachrichtigung.meldung_bauen(b, info.get("neue_dateien", 0), info.get("fristen", []),
+                                       _offene_freigaben() if b["freigaben"] else 0, now,
+                                       fehler or (f"Moodle-API: {info['fehler']}" if info.get("fehler") else None))
+    if m is None:
+        return
+    if b["mac"]:
+        notify(m.titel, m.text)  # über briefing.notify, damit Tests es abfangen können
+    if b["ntfy_thema"]:
+        ergebnis = benachrichtigung.senden(m, {**b, "mac": False})
+        if not ergebnis.get("ntfy"):
+            print(f"ntfy: {ergebnis.get('ntfy_fehler', 'nicht gesendet')}", file=sys.stderr)
+
+
+def cmd_briefing(args, settings) -> int:
+    # --print: ganzes Briefing als Markdown auf stdout (z. B. für Telegram), nie eine Mitteilung
+    quiet = args.no_notify or args.print
+    info: dict = {}
+    try:
+        path, summary = run_briefing(settings, _client(settings), _site_url(settings), days=args.days, info=info)
     except MoodleDbError as exc:
         if not quiet:
-            notify("Studium-Briefing", f"⚠️ {exc}")
+            _melden(settings, {}, str(exc))
         raise
     if args.print:
         print(path.read_text(), end="")
     else:
         print(f"{path}\n{summary}")
     if not quiet:
-        notify("Studium-Briefing", summary)
+        _melden(settings, info)
     return 0
 
 
@@ -279,15 +362,22 @@ def build_parser() -> argparse.ArgumentParser:
         return lambda p: p.add_argument(name, **kw)
 
     add("deadlines", cmd_deadlines, days(14), switch("--json"))
-    add("termine", cmd_termine, days(30), switch("--json"))
+    add("termine", cmd_termine, days(30), switch("--json"),
+        lambda p: p.add_argument("--vergangen", type=int, default=0, metavar="TAGE",
+                                 help="auch Termine der letzten TAGE Tage"))
     add("grades", cmd_grades, switch("--json"))
     add("new-files", cmd_new_files, switch("--json"))
     add("courses", cmd_courses, switch("--current"), switch("--json"))
-    add("convert", cmd_convert, lambda p: p.add_argument("--course"), switch("--current"), switch("--force"))
+    add("convert", cmd_convert, lambda p: p.add_argument("--course"), switch("--current"), switch("--force"),
+        lambda p: p.add_argument("--ocr", type=int, default=0, metavar="N",
+                                 help="höchstens N gescannte PDFs mit dem Vision-Modell lesen"))
     add("pending", cmd_pending, switch("--all"), switch("--json"))
     add("check-folien", cmd_check_folien, positional("rel"))
     add("done", cmd_done, positional("rel"))
     add("klasse", cmd_klasse, positional("rel"), positional("klasse"))
+    add("einstellungen", cmd_einstellungen, lambda p: p.add_argument("--get", help="z. B. verarbeitung.dateien_pro_lauf"))
+    add("zeitplan", cmd_zeitplan, lambda p: p.add_argument("aktion", nargs="?", choices=["status", "anwenden", "ein", "aus"],
+                                                           default="status"))
     add("briefing", cmd_briefing, days(14), switch("--no-notify"), switch("--print"))
     add("eigene-upload", cmd_eigene_upload, lambda p: p.add_argument("--course", required=True),
         positional("file"), switch("--json"))

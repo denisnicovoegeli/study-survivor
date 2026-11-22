@@ -10,14 +10,17 @@ import { Explorer } from "../explorer/Explorer.jsx";
 import { DocArea } from "../doc/DocArea.jsx";
 import { ReadMode } from "../read/ReadMode.jsx";
 import { KartenView } from "../karten/KartenView.jsx";
+import { LernplanView } from "../lernplan/LernplanView.jsx";
 import { Calendar } from "../plan/Calendar.jsx";
 import { Overview } from "../plan/Overview.jsx";
 import { Search } from "../plan/Search.jsx";
-import { ModulView } from "../modul/ModulView.jsx";
-import { GraphView } from "../graph/GraphView.jsx";
+import { ModuleBereich } from "../modul/ModuleBereich.jsx";
+import { StudiumView } from "../studium/StudiumView.jsx";
+import { AgentView } from "../agent/AgentView.jsx";
 import { ChatPanel } from "../chat/ChatPanel.jsx";
 import { UploadModal } from "../upload/UploadModal.jsx";
 import { ErrorBoundary } from "../ui/ErrorBoundary.jsx";
+import { courseShort } from "../plan/utils.js";
 
 import "../styles/tokens.css";
 import "../styles/shell.css";
@@ -34,6 +37,67 @@ function injectFonts() {
       "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap";
     document.head.appendChild(link);
   }
+}
+
+// Umschalter im Bereich «Lernen»: Lesemodus, Lernplan, Karteikarten, Suche
+const LERNEN = [
+  { id: "read", label: "Lesen" },
+  { id: "lernplan", label: "Lernplan" },
+  { id: "karten", label: "Karteikarten" },
+  { id: "search", label: "Suche" },
+];
+
+// Aktives Modul als Kategorie-Leiste: gilt für Lesen und Karteikarten
+const MIT_MODUL = new Set(["read", "karten"]);
+
+function ModulLeiste() {
+  const { courses, course, setCourse, modulFarbe } = useStudio();
+  const namen = (courses || []).map((k) => (typeof k === "string" ? k : k?.name)).filter(Boolean);
+  if (namen.length === 0) return null;
+  return (
+    <div className="stu-modul-leiste" role="radiogroup" aria-label="Aktives Modul">
+      <span className="stu-modul-leiste-label">Modul</span>
+      {namen.map((n) => (
+        <button
+          key={n}
+          type="button"
+          role="radio"
+          aria-checked={n === course}
+          className={"stu-modul-pill" + (n === course ? " is-on" : "")}
+          style={{ "--mc": modulFarbe(n) }}
+          onClick={() => setCourse(n)}
+          title={n}
+        >
+          <span className="stu-modul-punkt" aria-hidden="true" />
+          {courseShort(n) || n}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LernenTabs({ view, setView }) {
+  return (
+    <div className="stu-lernen-tabs">
+      <div className="stu-seg" role="tablist" aria-label="Lernen">
+        {LERNEN.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={view === t.id}
+            className={view === t.id ? "is-on" : ""}
+            onClick={() => setView(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {MIT_MODUL.has(view) ? <ModulLeiste /> : (
+        <span className="stu-modul-leiste-hinweis">{view === "lernplan" ? "Alle Module" : ""}</span>
+      )}
+    </div>
+  );
 }
 
 function StudioLayout() {
@@ -165,6 +229,9 @@ function StudioLayout() {
     case "read":
       mainContent = <ReadMode />;
       break;
+    case "lernplan":
+      mainContent = <LernplanView />;
+      break;
     case "karten":
       mainContent = <KartenView />;
       break;
@@ -175,10 +242,14 @@ function StudioLayout() {
       mainContent = <Overview />;
       break;
     case "modul":
-      mainContent = <ModulView />;
+      mainContent = <ModuleBereich />;
       break;
+    case "studium":
+      mainContent = <StudiumView />;
+      break;
+    case "agent":
     case "graph":
-      mainContent = <GraphView />;
+      mainContent = <AgentView />;
       break;
     case "search":
       mainContent = <Search />;
@@ -189,19 +260,27 @@ function StudioLayout() {
       break;
   }
 
+  if (LERNEN.some((t) => t.id === activeView)) {
+    mainContent = (
+      <>
+        <LernenTabs view={activeView} setView={setView} />
+        <div className="stu-lernen-body">{mainContent}</div>
+      </>
+    );
+  }
+
   const rootClass = `stu ${dark ? "stu-dark" : "stu-light"} ${mobile ? "is-mobile" : ""}`.trim();
   const showOverlayBackdrop = (leftOverlay && showLeft) || (chatOverlay && showRight);
 
   // Ansichten, die in der unteren Leiste keinen eigenen Knopf haben
   const moreItems = [
-    { id: "read", icon: "read", label: "Lesemodus" },
-    { id: "karten", icon: "cards", label: "Karteikarten" },
-    { id: "search", icon: "search", label: "Suche" },
-    { id: "modul", icon: "modul", label: "Modulübersicht" },
-    { id: "overview", icon: "overview", label: "Übersicht" },
-    { id: "graph", icon: "graph", label: "LangGraph" },
+    { id: "overview", icon: "overview", label: "Heute" },
+    { id: "modul", icon: "modul", label: "Module" },
+    { id: "read", icon: "read", label: "Lernen" },
+    { id: "studium", icon: "board", label: "Studium" },
+    { id: "agent", icon: "graph", label: "Agent" },
   ];
-  const moreActive = mobilePane === "doc" && moreItems.some((m) => m.id === view && m.id !== "read");
+  const moreActive = mobilePane === "doc" && moreItems.some((m) => m.id === view);
 
   return (
     <div className={rootClass}>

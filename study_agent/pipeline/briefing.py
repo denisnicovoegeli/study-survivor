@@ -15,7 +15,7 @@ from study_agent.pipeline.moodle_api import Deadline, MoodleClient, MoodleError
 from study_agent.pipeline.moodle_db import (FileRecord, all_files, current_courses, files_since, max_file_id,
                                    read_last_file_id, write_last_file_id)
 from study_agent.pipeline.pending import PendingFile, pending_files
-from study_agent.pipeline.termine import load_termine, merge_deadlines, upcoming_termine
+from study_agent.pipeline.termine import load_termine, merge_deadlines, upcoming_termine, zusammenfuehren
 
 TZ = ZoneInfo("Europe/Zurich")
 WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -98,7 +98,8 @@ def summary_line(deadlines: list[Deadline] | None, new_files: list[FileRecord], 
 
 
 def run_briefing(settings: Settings, client: MoodleClient, site_url: str, now: datetime | None = None,
-                 days: int = 14) -> tuple[Path, str]:
+                 days: int = 14, info: dict | None = None) -> tuple[Path, str]:
+    """Schreibt das Briefing des Tages. info (optional) bekommt neue Dateien, Fristen und Fehler für Mitteilungen."""
     now = now or datetime.now(timezone.utc)
     moodle, error = None, None
     try:
@@ -106,7 +107,7 @@ def run_briefing(settings: Settings, client: MoodleClient, site_url: str, now: d
     except MoodleError as exc:
         error = exc.errorcode or str(exc)
     all_termine, termine_errors = load_termine(settings.termine_dir)
-    local = upcoming_termine(all_termine, now, days)
+    local = zusammenfuehren(upcoming_termine(all_termine, now, days))
     deadlines = merge_deadlines(moodle or [], local) if moodle is not None or local else None
 
     db = settings.moodle_db
@@ -130,6 +131,10 @@ def run_briefing(settings: Settings, client: MoodleClient, site_url: str, now: d
     write_last_file_id(settings.state_dir, newest)
     advance_eigene_state(settings.data_dir, settings.state_dir)
     create_briefing_suggestions(settings, pending)
+    if info is not None:
+        info.update(neue_dateien=len(files), fehler=error,
+                    fristen=[(f"{d.course}: {d.name}" if d.course else d.name, d.due)
+                             for d in deadlines or [] if not d.overdue])
     return path, summary_line(deadlines, files, now, error, len(pending))
 
 

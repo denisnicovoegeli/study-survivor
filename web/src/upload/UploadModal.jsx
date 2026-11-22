@@ -4,7 +4,7 @@ import { useStudio } from "../app/store.jsx";
 import { Icon } from "../ui/Icon.jsx";
 import "./upload.css";
 
-const { useState, useRef, useMemo } = React;
+const { useState, useRef, useMemo, useEffect } = React;
 
 const ALLOWED_EXTS = new Set([".pdf", ".pptx", ".docx", ".xlsx"]);
 const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -34,6 +34,13 @@ export function UploadModal({ isOpen, onClose }) {
   const [targetCourse, setTargetCourse] = useState(
     () => (typeof activeCourse === "string" ? activeCourse : activeCourse?.name || courses[0]?.name || courses[0] || "")
   );
+
+  // Beim Öffnen den aktuellen Kurs vorwählen (z. B. «Hochladen» auf einer Modulkarte)
+  useEffect(() => {
+    if (!isOpen) return;
+    const name = typeof activeCourse === "string" ? activeCourse : activeCourse?.name;
+    if (name) setTargetCourse(name);
+  }, [isOpen, activeCourse]);
 
   const [fileList, setFileList] = useState([]); // [{ file, relPath }]
   const [dragOver, setDragOver] = useState(false);

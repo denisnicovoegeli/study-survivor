@@ -4,19 +4,29 @@ import { useStudio } from "../app/store.jsx";
 import { Icon } from "../ui/Icon.jsx";
 import { Badge } from "../ui/Badge.jsx";
 import { Loading } from "../ui/Loading.jsx";
+import { BrauchtDich } from "./BrauchtDich.jsx";
+import { DieseWoche } from "../lernplan/LernplanView.jsx";
 import { useAsync } from "../ui/hooks.js";
 import {
   parseDue,
   fmtDate,
   fmtDue,
   kindLabel,
-  courseHue,
   courseShort,
   resolveFileInTree,
 } from "./utils.js";
 import "./plan.css";
 
 const { useState, useMemo, useCallback } = React;
+
+// Name aus den Einstellungen für die Begrüssung
+function useProfilName(api) {
+  const [settingsName, setName] = useState("");
+  React.useEffect(() => {
+    api("einstellungen").then((d) => setName(d.einstellungen?.profil?.name || "")).catch(() => {});
+  }, [api]);
+  return { settingsName };
+}
 
 export function Overview() {
   const {
@@ -28,6 +38,7 @@ export function Overview() {
     tree,
     reloadTree,
     courses: storeCourses,
+    modulFarbe,
   } = useStudio();
 
   // Uebersichts- und Kursdaten abrufen
@@ -56,7 +67,11 @@ export function Overview() {
     return list;
   }, [overviewData]);
 
-  const pending = useMemo(() => overviewData.pending || [], [overviewData]);
+  // Unklare Dateien (Route „fragen“) gehören zu «Braucht dich», der Rest wartet auf den Agenten
+  const allPending = useMemo(() => overviewData.pending || [], [overviewData]);
+  const unklar = useMemo(() => allPending.filter((p) => p.route === "fragen"), [allPending]);
+  const pending = useMemo(() => allPending.filter((p) => p.route !== "fragen"), [allPending]);
+  const { settingsName } = useProfilName(api);
   const newFiles = useMemo(() => overviewData.new_files || [], [overviewData]);
   const kurse = useMemo(() => kurseRes?.kurse || storeCourses || [], [kurseRes, storeCourses]);
 
@@ -144,11 +159,11 @@ export function Overview() {
   return (
     <div className="stu-overview">
       <header className="stu-viewh" style={{ margin: "-20px -24px 0 -24px" }}>
-        <h2>Studium Cockpit</h2>
+        <h2>{settingsName ? `Hallo ${settingsName}` : "Heute"}</h2>
         <span className="stu-viewh-desc">
           {overviewLoading && !overviewRes
             ? "Übersicht wird geladen …"
-            : "Zentrale Übersicht über Termine, Lernstoff, Kurse und Uploads"}
+            : new Date().toLocaleDateString("de-CH", { weekday: "long", day: "numeric", month: "long" })}
         </span>
 
         <div className="stu-grow" />
@@ -178,6 +193,9 @@ export function Overview() {
         </div>
       ) : (
         <>
+          <BrauchtDich unklar={unklar} onChange={reloadOverview} />
+          <DieseWoche />
+
           {/* Kennzahlen */}
           <section className="stu-stats" aria-label="Kennzahlen">
             <div className="stu-stat-card">
@@ -187,7 +205,7 @@ export function Overview() {
 
             <div className="stu-stat-card">
               <span className="stu-stat-num">{pending.length}</span>
-              <span className="stu-stat-label">Zu verarbeitende Dateien</span>
+              <span className="stu-stat-label">Wartet auf den Agenten</span>
             </div>
 
             <div className="stu-stat-card">
@@ -224,7 +242,7 @@ export function Overview() {
                         <li
                           key={t.course + t.name + t.due + idx}
                           className="stu-row"
-                          style={{ borderLeft: `3px solid hsl(${courseHue(t.course)} 65% 50%)` }}
+                          style={{ borderLeft: `3px solid ${modulFarbe(t.course)}` }}
                         >
                           <span className="stu-row-date">
                             {fmtDue(t.due, t.all_day)}
@@ -275,7 +293,7 @@ export function Overview() {
               {/* Zu verarbeiten */}
               <section className="stu-panel">
                 <div className="stu-panel-head">
-                  <h3>Zu verarbeiten</h3>
+                  <h3>Wartet auf den Agenten</h3>
                   <span className="stu-col-count">{pending.length}</span>
                 </div>
 
@@ -479,7 +497,7 @@ export function Overview() {
                           <div className="stu-course-main">
                             <span
                               className="stu-cdot"
-                              style={{ background: `hsl(${courseHue(courseName)} 65% 50%)` }}
+                              style={{ background: modulFarbe(courseName) }}
                             />
 
                             <div className="stu-course-info">

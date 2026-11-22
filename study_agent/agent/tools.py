@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 from study_agent.config import load_moodle_config, load_settings
 from study_agent.pipeline.briefing import TZ
 from study_agent.pipeline.moodle_api import MoodleClient, MoodleError
-from study_agent.pipeline.termine import load_termine, merge_deadlines, upcoming_termine
+from study_agent.pipeline.termine import load_termine, merge_deadlines, upcoming_termine, zusammenfuehren
 
 
 def _fmt(d) -> str:
@@ -31,7 +31,7 @@ def termine(tage: int = 30, kurs: str | None = None) -> str:
     settings = load_settings()
     now = datetime.now(timezone.utc)
     local, errors = load_termine(settings.termine_dir)
-    local = upcoming_termine(local, now, tage)
+    local = zusammenfuehren(upcoming_termine(local, now, tage))
     hinweis = ""
     try:
         client = MoodleClient(load_moodle_config(settings.moodle_config_path))

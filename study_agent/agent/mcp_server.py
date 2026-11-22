@@ -54,14 +54,19 @@ def dateien_auflisten(kurs: str) -> list[str]:
     Args:
         kurs: Teil des Kursnamens, z. B. "Deep Learning".
     """
+    from study_agent.pipeline.ausschluss import laden
+
     d = _kurs_dir(kurs)
+    aus = laden(load_settings().state_dir)
     out = set()
     for p in d.rglob("*.md"):
         rel = p.relative_to(d)
         if p.name == "INDEX.md" or _skip(rel):
             continue
         name = rel.as_posix()
-        out.add(name[:-len(".folien.md")] if name.endswith(".folien.md") else name[:-len(".md")])
+        name = name[:-len(".folien.md")] if name.endswith(".folien.md") else name[:-len(".md")]
+        if f"{d.name}/{name}" not in aus and f"_eigene/{d.name}/{name}" not in aus:
+            out.add(name)
     return sorted(out)
 
 

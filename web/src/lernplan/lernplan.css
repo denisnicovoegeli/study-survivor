@@ -1,0 +1,45 @@
+/* lernplan.css: Lernplan im Bereich «Lernen» */
+
+.lp-body { height: 100%; overflow-y: auto; padding: 20px 24px 40px; background: var(--bg); display: grid; gap: 16px; align-content: start; }
+@media (max-width: 640px) { .lp-body { padding: 16px; } }
+.lp-kopf { display: grid; gap: 6px; max-width: 760px; }
+.lp-kopf h2 { margin: 0; font-size: 20px; }
+
+.lp-sub { font-size: 12.5px; color: var(--muted); }
+.lp-module {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;
+}
+.lp-modul { display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
+.lp-modul-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.lp-modul-kopf strong { font-size: 15px; line-height: 1.3; }
+.lp-tage {
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap;
+  background: var(--acc-soft); color: var(--acc);
+}
+
+.lp-wochen { display: grid; gap: 12px; max-width: 900px; }
+.lp-woche { display: grid; gap: 12px; }
+.lp-woche.is-jetzt { border-color: var(--acc); box-shadow: inset 3px 0 0 var(--acc); }
+.lp-eintrag { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.lp-eintrag:first-of-type { border-top: 0; padding-top: 0; }
+.lp-eintrag-modul { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.lp-pruefung { justify-self: start; font-size: 12.5px; font-weight: 600; color: var(--warn); }
+.lp-wiederholung { margin: 0; font-size: 13px; color: var(--fg); line-height: 1.5; }
+
+.lp-themen { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.lp-themen li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; min-width: 0; }
+.lp-themen label { cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
+.lp-themen input { width: 16px; height: 16px; accent-color: var(--acc); flex: none; }
+.lp-themen input:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.lp-themen li.is-erledigt label { color: var(--muted); text-decoration: line-through; }
+.lp-chip { font-size: 10.5px; padding: 2px 7px; border-radius: 99px; background: var(--line); color: var(--muted); white-space: nowrap; }
+
+.lp-gelernt summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
+.lp-gelernt[open] summary { margin-bottom: 10px; }
+.lp-ohne { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+.lp-ohne li { display: grid; gap: 2px; font-size: 13.5px; }
+
+.lp-heute { margin-bottom: 16px; }
+.lp-heute-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13.5px; }
+.lp-heute-liste li { display: grid; gap: 2px; }

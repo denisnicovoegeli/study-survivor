@@ -203,9 +203,10 @@ def merge_calendar_events(deadlines: List[Dict[str, Any]], termine: List[Dict[st
             merged_event["kind"] = "abgabe" if (d_kind == "abgabe" or t_match_kind == "abgabe") else (d_kind or t_match_kind)
             # Den aussagekraeftigeren Titel waehlen
             t_name = str(t_match.get("name") or t_match.get("titel") or "")
+            t_orig = str(t_match.get("titel_original") or "") or t_name
             # Titel aus der Termin-Datei merken: Aendern und Loeschen suchen danach,
             # auch wenn der angezeigte Name aus Moodle stammt (A3 fuehrt unaehnliche Titel zusammen)
-            merged_event["termin_titel"] = t_name
+            merged_event["termin_titel"] = t_orig
             if len(t_name) >= len(d_title):
                 merged_event["name"] = t_name
             else:
@@ -231,6 +232,8 @@ def merge_calendar_events(deadlines: List[Dict[str, Any]], termine: List[Dict[st
             t_item["is_moodle"] = False
             t_item["is_termin"] = True
             t_item["editable"] = True
+            if t_item.get("titel_original"):
+                t_item["termin_titel"] = t_item["titel_original"]
             if "kind" not in t_item and "art" in t_item:
                 t_item["kind"] = normalize_kind(t_item["art"])
             merged.append(t_item)

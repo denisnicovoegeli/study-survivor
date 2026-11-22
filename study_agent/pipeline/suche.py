@@ -151,6 +151,11 @@ def moodle_links(settings) -> dict[str, str]:
     return out
 
 
+def ausgeschlossen(state_dir: Path) -> set[str]:
+    from study_agent.pipeline.ausschluss import laden
+    return laden(state_dir)
+
+
 def build_index(knowledge_dir: Path, state_dir: Path, force: bool = False,
                 links: dict[str, str] | None = None) -> IndexReport:
     """Indiziert nur Dateien, deren Signatur (Quelle, mtime, Grösse) sich geändert hat."""
@@ -162,7 +167,10 @@ def build_index(knowledge_dir: Path, state_dir: Path, force: bool = False,
         sigs = {r[0]: r[2] for r in con.execute("SELECT datei, quelle, sig FROM meta")}
         report = IndexReport()
         seen: set[str] = set()
+        aus = ausgeschlossen(state_dir)  # Häkchen «Nutzen» im Dashboard; fallen als „stale“ heraus
         for key, path, quelle in iter_docs(knowledge_dir):
+            if key in aus:
+                continue
             seen.add(key)
             sig = f"{quelle}|{path.stat().st_mtime_ns}|{path.stat().st_size}"
             if not force and sigs.get(key) == sig:

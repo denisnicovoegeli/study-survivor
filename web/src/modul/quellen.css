@@ -1,0 +1,100 @@
+/* quellen.css: Quellen-Karte im Modul und Knopf «Moodle aktualisieren» */
+
+.ma { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.ma-status { font-size: 12.5px; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+
+.qk { margin-bottom: 24px; display: grid; gap: 14px; }
+.qk-kopf { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.qk-kopf .stu-modul-card-title { margin: 0; }
+
+.qk-zahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.qk-zahl {
+  display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg); min-width: 0;
+}
+.qk-zahl strong { font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.qk-zahl span { font-size: 12px; color: var(--muted); }
+.qk-zahl.is-ok strong { color: var(--ok); }
+.qk-zahl.is-aus strong { color: var(--muted); }
+.qk-hinweis { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); max-width: 760px; }
+
+.qk-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.qk-filter-knopf {
+  font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.qk-filter-knopf:hover { border-color: var(--acc); }
+.qk-filter-knopf.is-an { background: var(--acc-soft); border-color: var(--acc); color: var(--acc); font-weight: 600; }
+.qk-filter-knopf:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.qk-filter-zahl { font-variant-numeric: tabular-nums; opacity: .75; margin-left: 2px; }
+
+.qk-abschnitte { display: grid; gap: 8px; }
+.qk-abschnitt { border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; background: var(--surface); }
+.qk-abschnitt summary {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 10px 0; cursor: pointer; list-style-position: inside;
+}
+.qk-abschnitt summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 6px; }
+.qk-abschnitt-name { font-weight: 600; font-size: 13.5px; min-width: 0; overflow-wrap: anywhere; }
+.qk-abschnitt-zahl { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.qk-steuerung { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.qk-texte { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+.qk-texte input, .qk-alle input, .qk-nutzen input { width: 16px; height: 16px; accent-color: var(--acc); }
+
+.qk-legende { font-size: 12.5px; color: var(--muted); }
+.qk-legende summary { cursor: pointer; }
+.qk-legende dl { margin: 8px 0; display: grid; gap: 4px; }
+.qk-legende dl div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 8px; }
+.qk-legende dt { font-weight: 600; color: var(--fg); }
+.qk-legende dd { margin: 0; }
+.qk-legende p { margin: 0; line-height: 1.8; }
+
+.qk-alle { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); margin: 0 0 6px; cursor: pointer; }
+.qk-tabelle-rahmen { overflow-x: auto; padding-bottom: 8px; }
+.qk-tabelle { width: 100%; border-collapse: collapse; font-size: 13px; }
+.qk-tabelle th {
+  font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; padding: 4px 6px;
+  border-bottom: 1px solid var(--line); white-space: nowrap; cursor: help;
+}
+.qk-tabelle th:nth-child(2) { text-align: left; cursor: default; }
+.qk-tabelle td { padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.qk-tabelle tr:last-child td { border-bottom: 0; }
+.qk-nutzen { width: 44px; text-align: center; }
+.qk-doc { display: grid; gap: 1px; min-width: 180px; }
+.qk-titel {
+  font: inherit; font-size: 13.5px; text-align: left; color: var(--fg); background: none; border: 0; padding: 0;
+  min-width: 0; overflow-wrap: anywhere;
+}
+button.qk-titel { cursor: pointer; }
+button.qk-titel:hover { color: var(--acc); text-decoration: underline; }
+button.qk-titel:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
+.qk-zeile.is-aus .qk-titel, .qk-zeile.is-link .qk-titel, .qk-zeile.is-typ .qk-titel,
+.qk-zeile.is-fehlt .qk-titel, .qk-zeile.is-leer .qk-titel { color: var(--muted); }
+.qk-zeile.is-aus .qk-titel { text-decoration: line-through; }
+.qk-meta { font-size: 12px; color: var(--muted); }
+
+.qk-schritt { width: 64px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.qk-schritt.is-ok { color: var(--ok); }
+.qk-schritt.is-wartet { color: var(--warn); }
+.qk-schritt.is-nein { color: var(--warn); }
+.qk-schritt.is-na { color: var(--muted); opacity: .6; font-weight: 400; }
+.qk-schritt.is-aus { color: var(--muted); }
+.qk-legende .qk-schritt { display: inline-block; width: auto; }
+.qk-sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .qk-tabelle thead { display: none; }
+  .qk-tabelle, .qk-tabelle tbody { display: block; }
+  .qk-tabelle tr { display: grid; grid-template-columns: 36px repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--line); padding: 6px 0; }
+  .qk-tabelle td { border: 0; padding: 2px; }
+  .qk-nutzen { grid-row: span 2; }
+  .qk-doc { grid-column: 2 / -1; min-width: 0; }
+  .qk-schritt { width: auto; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+  .qk-schritt::before {
+    content: attr(data-label); font-weight: 400; color: var(--muted); font-size: 10px;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+}

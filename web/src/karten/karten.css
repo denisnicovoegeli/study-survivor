@@ -421,3 +421,30 @@
     font-size: 13.5px;
   }
 }
+
+/* Karteikarten erstellen */
+.ke { width: 100%; max-width: 760px; margin: 0 auto; display: grid; gap: 12px; align-content: start; }
+.ke-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ke-kopf h2 { margin: 0; font-size: 18px; }
+.ke-text { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.ke-schnell { display: flex; gap: 6px; flex-wrap: wrap; }
+.ke-liste { display: grid; gap: 10px; }
+.ke-gruppe { margin: 0; padding: 8px 12px 10px; border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 2px; min-width: 0; }
+.ke-gruppe legend { font-size: 12px; font-weight: 600; color: var(--muted); padding: 0 4px; overflow-wrap: anywhere; }
+.ke-dok {
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 8px; align-items: center;
+  padding: 5px 0; cursor: pointer;
+}
+.ke-dok input { width: 16px; height: 16px; accent-color: var(--acc); }
+.ke-dok-name { font-size: 13.5px; overflow-wrap: anywhere; }
+.ke-dok-meta { grid-column: 2; font-size: 12px; color: var(--muted); }
+.ke-fuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--bg); padding: 10px 0; border-top: 1px solid var(--line); }
+.ke-anzahl { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ke-anzahl select { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 4px 6px; }
+.ke-lauf { display: grid; gap: 8px; font-size: 13.5px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; }
+.ke-balken { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.ke-balken span { display: block; height: 100%; background: var(--acc); transition: width .4s; }
+.ke-fehler { margin: 0; padding-left: 18px; font-size: 12px; color: var(--warn); }
+/* Langer Inhalt (Erstellen-Panel) wächst nach unten, statt zentriert nach oben über die Kopfzeile zu laufen */
+.stu-karten-body { justify-content: safe center; flex: 1 0 auto; }
+.stu-karten-body:has(.ke) { justify-content: flex-start; }

@@ -4,6 +4,7 @@ import { useStudio } from "../app/store.jsx";
 import { Icon } from "../ui/Icon.jsx";
 import { Loading } from "../ui/Loading.jsx";
 import { useAsync } from "../ui/hooks.js";
+import { KartenErstellen } from "./KartenErstellen.jsx";
 import "./karten.css";
 
 const { useState, useEffect, useMemo, useCallback } = React;
@@ -11,8 +12,6 @@ const { useState, useEffect, useMemo, useCallback } = React;
 export function KartenView() {
   const {
     course,
-    setCourse,
-    courses,
     openFolie,
     openFile,
     api,
@@ -28,6 +27,7 @@ export function KartenView() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [cardsList, setCardsList] = useState([]);
+  const [erstellen, setErstellen] = useState(false);
 
   // Karten vom Backend abrufen
   const {
@@ -194,23 +194,11 @@ export function KartenView() {
             <h1>Karteikarten</h1>
           </div>
 
-          {/* Kursauswahl */}
-          <select
-            className="stu-karten-filter-select"
-            value={course || ""}
-            onChange={(e) => setCourse(e.target.value)}
-            aria-label="Kurs auswählen"
-          >
-            {courses &&
-              courses.map((k) => {
-                const name = typeof k === "string" ? k : k?.name;
-                return (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                );
-              })}
-          </select>
+          {!erstellen ? (
+            <button type="button" className="stu-tbtn is-pri" onClick={() => setErstellen(true)}>
+              + Karteikarten erstellen
+            </button>
+          ) : null}
         </div>
 
         {/* Leitner-Fächer und Filter */}
@@ -291,15 +279,30 @@ export function KartenView() {
 
       {/* Hauptbereich */}
       <main className="stu-karten-body">
-        {loading ? (
+        {erstellen && course ? (
+          <KartenErstellen
+            course={course}
+            onSchliessen={() => setErstellen(false)}
+            onFertig={() => { reload(); setErstellen(false); }}
+          />
+        ) : loading ? (
           <Loading text="Begriffe werden geladen …" />
         ) : filteredCards.length === 0 ? (
           <div className="stu-karten-empty">
-            <h3>Keine Karteikarten vorhanden</h3>
-            <p>
-              In diesem Fach oder Filter liegen keine Begriffe. Wähle ein anderes Fach
-              oder setze die Filter zurück.
-            </p>
+            {cardsList.length === 0 ? (
+              <>
+                <h3>Noch keine Karteikarten für dieses Modul</h3>
+                <p>Der Agent erstellt sie aus den Folien: Du wählst die Dokumente, er schreibt Begriff, Definition und Folie.</p>
+                <button type="button" className="stu-tbtn is-pri" onClick={() => setErstellen(true)}>
+                  Karteikarten erstellen
+                </button>
+              </>
+            ) : (
+              <>
+                <h3>Keine Karten in dieser Auswahl</h3>
+                <p>Wähle ein anderes Fach oder setze die Filter zurück.</p>
+              </>
+            )}
           </div>
         ) : currentCard ? (
           <div className="stu-card-wrap">

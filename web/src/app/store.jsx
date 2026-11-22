@@ -96,6 +96,21 @@ export function pdfForTab(tab, tree) {
 
 const StudioContext = createContext(null);
 
+const _norm = (s) => String(s || "").normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
+
+// Farbe zu einem Kursnamen; Kalender und Suche liefern den Namen manchmal leicht abweichend
+function modulFarbeAus(farben, palette, name) {
+  if (!name) return "var(--muted)";
+  if (farben[name]) return farben[name];
+  const n = _norm(name);
+  for (const [k, f] of Object.entries(farben)) {
+    const kn = _norm(k);
+    if (kn === n || kn.startsWith(n) || n.startsWith(kn)) return f;
+  }
+  const p = palette.length ? palette : ["#64748b"];
+  return p[[...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7) % p.length];
+}
+
 export function StudioProvider({ children }) {
   // Geraete-Erkennung
   const mobile = useMedia("(max-width: 760px)");
@@ -114,7 +129,7 @@ export function StudioProvider({ children }) {
   }, []);
 
   // Ansichten und Leisten
-  const [view, setView] = useState("work");
+  const [view, setView] = useState("overview");  // Startseite «Heute»
   const [leftTab, setLeftTab] = useState("files");
   const [leftOpen, setLeftOpen] = useState(true);
   // Zwischenbreiten (<= 1200 px): Chat startet eingeklappt, damit die Mitte Platz hat
@@ -129,6 +144,8 @@ export function StudioProvider({ children }) {
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState(null);
   const [course, setCourseState] = useState(() => load("course", ""));
+  const [coursesTick, setCoursesTick] = useState(0);
+  const reloadCourses = useCallback(() => setCoursesTick((t) => t + 1), []);
 
   useEffect(() => {
     let active = true;
@@ -154,12 +171,26 @@ export function StudioProvider({ children }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [coursesTick]);
 
   const setCourse = useCallback((name) => {
     setCourseState(name);
     save("course", name);
   }, []);
+
+  // Modulfarben (state/modulfarben.json): pro Modul eine feste, eindeutige Farbe
+  const [farben, setFarben] = useState({});
+  const [palette, setPalette] = useState([]);
+  useEffect(() => {
+    api("modulfarben")
+      .then((d) => { setFarben(d.farben || {}); setPalette(d.palette || []); })
+      .catch(() => {});
+  }, [coursesTick]);
+  const setModulFarbe = useCallback(async (name, farbe) => {
+    const d = await api("modulfarben", { method: "PUT", body: { name, farbe } });
+    setFarben(d.farben || {});
+  }, []);
+  const modulFarbe = useCallback((name) => modulFarbeAus(farben, palette, name), [farben, palette]);
 
   // Dateibaum
   const [tree, setTree] = useState(null);
@@ -369,6 +400,10 @@ export function StudioProvider({ children }) {
       courses,
       coursesLoading,
       coursesError,
+      reloadCourses,
+      modulFarbe,
+      setModulFarbe,
+      farbPalette: palette,
       theme,
       dark,
       cycleTheme,
@@ -420,6 +455,10 @@ export function StudioProvider({ children }) {
       courses,
       coursesLoading,
       coursesError,
+      reloadCourses,
+      modulFarbe,
+      setModulFarbe,
+      palette,
       theme,
       dark,
       cycleTheme,

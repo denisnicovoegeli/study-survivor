@@ -34,6 +34,7 @@ class Deadline:
     source: str = ""  # leer = Moodle-Kalender, sonst Quelldatei aus termine/*.yaml
     all_day: bool = False  # nur Datum bekannt; due ist dann 23:59 Zürich
     course_id: int = 0
+    titel_original: str = ""  # zusammengeführte Termine: Titel in termine/*.yaml (Ändern, Löschen)
 
 
 @dataclass(frozen=True)

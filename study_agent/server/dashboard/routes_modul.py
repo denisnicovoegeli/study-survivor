@@ -35,6 +35,64 @@ def extract_week_num(text: str) -> Optional[int]:
     return int(m.group(1)) if m else None
 
 
+WICHTIGE_ARTEN = ("pruefung", "abgabe", "praesentation")
+
+
+def _zuerich_datum(due: Any) -> Optional[str]:
+    """ISO-Datum in Zürcher Zeit. Ganztägige Termine liegen als 22:59 UTC vor (= 23:59 des Tages)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    text = str(due or "").strip()
+    if not text:
+        return None
+    try:
+        d = datetime.fromisoformat(text.replace(" ", "T"))
+    except ValueError:
+        return text[:10] if re.match(r"\d{4}-\d{2}-\d{2}", text) else None
+    if d.tzinfo is not None:
+        d = d.astimezone(ZoneInfo("Europe/Zurich"))
+    return d.date().isoformat()
+
+
+def wichtige_daten(modul_daten: List[str], termine: List[Dict[str, Any]], heute: str) -> List[Dict[str, Any]]:
+    """Daten zum Leistungsnachweis: Prüfung, Abgaben, Präsentationen.
+
+    modul.md sammelt beim Zusammenfassen oft alle Unterrichtsdaten aus dem Semesterprogramm.
+    Einträge ohne Beschreibung sind solche Lektionen und fallen weg; dazu kommen die Termine
+    der Arten Prüfung, Abgabe und Präsentation aus dem Kalender.
+    """
+    from difflib import SequenceMatcher
+
+    from study_agent.pipeline.modul import _datum_eintrag, _vergleichstext
+
+    out: List[Dict[str, Any]] = []
+
+    def add(iso: Optional[str], text: str, art: str, quelle: str = "") -> None:
+        text = text.strip().rstrip(":").strip()
+        if not iso or not text:
+            return
+        key = _vergleichstext(text)
+        for e in out:
+            if e["datum"] == iso:
+                vkey = _vergleichstext(e["text"])
+                if key == vkey or key.startswith(vkey) or vkey.startswith(key) \
+                        or SequenceMatcher(None, key, vkey).ratio() > 0.85:
+                    if len(text) > len(e["text"]):
+                        e["text"] = text
+                    return
+        out.append({"datum": iso, "text": text, "art": art, "quelle": quelle, "vergangen": iso < heute})
+
+    for ev in termine:
+        if ev.get("kind") in WICHTIGE_ARTEN:
+            add(_zuerich_datum(ev.get("due") or ev.get("date")), str(ev.get("name") or ""), ev["kind"],
+                str(ev.get("source") or ""))
+    for eintrag in modul_daten:
+        iso, rest = _datum_eintrag(str(eintrag))
+        add(iso, rest, "modul")
+    return sorted(out, key=lambda e: e["datum"])
+
+
 def get_modul_data(
     course: str,
     project_dir: Path,
@@ -164,6 +222,7 @@ def get_modul_data(
             "quellen": modul_info.quellen,
         },
         "termine": events,
+        "wichtige_daten": wichtige_daten(modul_info.daten, events, str(date.today())),
         "fortschritt": {
             "wochen": fortschritt,
             "gesamt": {

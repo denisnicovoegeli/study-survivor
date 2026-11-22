@@ -29,8 +29,9 @@ def parse_sources(quelle_str: str) -> List[Dict[str, Any]]:
     parts = [p.strip() for p in quelle_str.split(";") if p.strip()]
     for part in parts:
         # Dateiname steht vor dem ersten Komma oder vor "Folie"
-        pdf_match = re.search(r"([\w.\-]+\.pdf)", part, re.IGNORECASE)
-        filename = pdf_match.group(1) if pdf_match else ""
+        # Dateinamen dürfen Leerzeichen enthalten («1 Generative AI.pdf»)
+        pdf_match = re.search(r"([^,;|]+?\.(?:pdf|pptx|docx|md))\b", part, re.IGNORECASE)
+        filename = pdf_match.group(1).strip() if pdf_match else ""
 
         # Foliennummern suchen
         pages = []
@@ -222,6 +223,10 @@ def get_course_cards(
     return cards
 
 
+_job: Dict[str, Any] = {"status": "bereit"}
+_job_lock = __import__("threading").Lock()
+
+
 def register_routes(router: Any, get_settings_fn: Any) -> None:
     """Registriert Karteikarten-Routen am FastAPI-Router."""
     from fastapi import Body, Query
@@ -231,6 +236,48 @@ def register_routes(router: Any, get_settings_fn: Any) -> None:
         settings = get_settings_fn()
         cards = get_course_cards(course, settings.lernen_dir, settings.state_dir)
         return {"course": course, "cards": cards, "total": len(cards)}
+
+    @router.get("/karten/dokumente")
+    def get_karten_dokumente(course: str = Query(...)):
+        from study_agent.pipeline.karteikarten import dokumente
+        return {"course": course, "dokumente": dokumente(get_settings_fn(), course), "job": dict(_job)}
+
+    @router.post("/karten/erstellen")
+    def post_karten_erstellen(payload: Dict[str, Any] = Body(...)):
+        """Startet die Erstellung im Hintergrund; Status per GET /karten/erstellen."""
+        import threading
+
+        from fastapi import HTTPException
+
+        from study_agent.pipeline.karteikarten import erstellen
+
+        course = str(payload.get("course") or "")
+        rels = [str(r) for r in payload.get("rels") or []][:40]
+        if not course or not rels:
+            raise HTTPException(400, "course und rels fehlen")
+        with _job_lock:
+            if _job.get("status") == "läuft":
+                raise HTTPException(409, "Es werden schon Karteikarten erstellt.")
+            _job.clear()
+            _job.update(status="läuft", course=course, total=len(rels), index=0, datei="", neu=0, fehler=[])
+        settings = get_settings_fn()
+
+        def fortschritt(i, datei):
+            _job.update(index=i, datei=datei)
+
+        def run():
+            try:
+                r = erstellen(settings, course, rels, int(payload.get("anzahl") or 10), fortschritt=fortschritt)
+                _job.update(status="fertig", index=len(rels), datei="", **r)
+            except Exception as exc:  # noqa: BLE001
+                _job.update(status="fehler", fehler=[f"{type(exc).__name__}: {exc}"])
+
+        threading.Thread(target=run, daemon=True).start()
+        return dict(_job)
+
+    @router.get("/karten/erstellen")
+    def get_karten_erstellen():
+        return dict(_job)
 
     @router.post("/karten/review")
     async def post_karten_review(payload: Dict[str, Any] = Body(...)):

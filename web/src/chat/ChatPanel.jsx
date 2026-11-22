@@ -56,7 +56,7 @@ function Message({ m }) {
   );
 }
 
-function FreigabeCard({ f, onDone }) {
+export function FreigabeCard({ f, onDone }) {
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [result, setResult] = useState(null);

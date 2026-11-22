@@ -207,9 +207,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: hsl(var(--h, 220) 70% 50% / 0.14);
+  background: color-mix(in srgb, var(--mc, #64748b) 16%, transparent);
   color: var(--fg);
-  border-left: 3px solid hsl(var(--h, 220) 65% 50%);
+  border-left: 3px solid var(--mc, #64748b);
   user-select: none;
 }
 
@@ -293,7 +293,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: hsl(var(--h, 220) 65% 50%);
+  background: var(--mc, #64748b);
   flex: none;
 }
 
@@ -407,7 +407,7 @@
   display: grid;
   gap: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border-top: 3px solid hsl(var(--h, 220) 65% 50%);
+  border-top: 3px solid var(--mc, #64748b);
   cursor: grab;
   transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s ease;
 }
@@ -1109,4 +1109,160 @@
   .stu-col {
     min-height: 280px;
   }
+}
+
+/* «Braucht dich» auf der Startseite */
+.bd.has-items {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn) inset;
+}
+
+.bd-group {
+  display: grid;
+  gap: 8px;
+}
+
+.bd-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.bd-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bd-row select {
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px 6px;
+  max-width: 100%;
+}
+
+.bd-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.bd-row .stu-row-grow {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.bd-row .stu-row-grow strong,
+.bd-row .stu-row-sub {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bd-erklaerung { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.bd-name {
+  font: inherit; font-weight: 600; font-size: 13.5px; color: var(--fg); background: none; border: 0; padding: 0;
+  cursor: pointer; text-align: left; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bd-name:hover { color: var(--acc); }
+.bd-name:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
+.bd-vorschau { flex: 1 1 100%; display: grid; gap: 8px; justify-items: start; }
+.bd-vorschau-text {
+  margin: 0; width: 100%; box-sizing: border-box; max-height: 260px; overflow: auto;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+  font-family: inherit; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* ---- Kalender: Kopf mit Ansicht und Filter ---- */
+.kal-kopf { flex: none; display: grid; gap: 8px; padding: 12px 20px 10px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.kal-zeile { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.kal-titel { margin: 0; font-size: 18px; text-transform: capitalize; min-width: 0; }
+.kal-nav { display: flex; gap: 4px; }
+.kal-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; }
+.kal-filter-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.kal-modul {
+  font: inherit; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--muted);
+  white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+}
+.kal-modul.is-an { color: var(--fg); border-color: var(--mc); background: color-mix(in srgb, var(--mc) 14%, transparent); }
+.kal-modul:focus-visible, .kal-link:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.kal-punkt { width: 8px; height: 8px; border-radius: 50%; flex: none; border: 2px solid var(--mc); box-sizing: border-box; }
+.kal-modul.is-an .kal-punkt { background: var(--mc); }
+.kal-link { font: inherit; font-size: 12.5px; color: var(--acc); background: none; border: 0; padding: 2px 4px; cursor: pointer; }
+.kal-link:hover { text-decoration: underline; }
+.kal-trenner { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
+.kal-schalter { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); cursor: pointer; }
+.kal-schalter input { width: 15px; height: 15px; accent-color: var(--acc); }
+.kal-zeit { font-variant-numeric: tabular-nums; opacity: .75; margin-right: 4px; }
+
+/* ---- Termin als Zeile (Woche, Tag, Agenda) ---- */
+.kal-termin {
+  font: inherit; text-align: left; color: var(--fg); cursor: pointer; width: 100%; box-sizing: border-box;
+  display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border-radius: 6px;
+  border: 0; border-left: 3px solid var(--mc); background: color-mix(in srgb, var(--mc) 10%, var(--surface));
+}
+.kal-termin:hover { background: color-mix(in srgb, var(--mc) 20%, var(--surface)); }
+.kal-termin:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.kal-termin.is-lektion { background: transparent; border-left-style: dashed; }
+.kal-termin.is-wichtig .kal-termin-titel { font-weight: 700; }
+.kal-termin-zeit { flex: none; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 38px; padding-top: 1px; }
+.kal-termin-datum { flex: none; display: grid; justify-items: center; min-width: 30px; font-size: 10.5px; color: var(--muted); text-transform: uppercase; }
+.kal-termin-datum b { font-size: 16px; color: var(--fg); line-height: 1.1; }
+.kal-termin-text { display: grid; gap: 1px; min-width: 0; }
+.kal-termin-titel { font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.kal-termin-meta { font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.kal-termin.is-kompakt { flex-direction: column; gap: 1px; padding: 5px 6px; }
+.kal-termin.is-kompakt .kal-termin-zeit { min-width: 0; padding: 0; font-size: 11px; }
+.kal-termin.is-kompakt .kal-termin-titel { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.kal-termin.is-gross { padding: 10px 14px; gap: 14px; }
+.kal-termin.is-gross .kal-termin-zeit { font-size: 14px; min-width: 70px; color: var(--fg); font-weight: 600; }
+.kal-termin.is-gross .kal-termin-titel { font-size: 15px; }
+.kal-termin.is-gross .kal-termin-meta { font-size: 12.5px; }
+
+/* ---- Wochenansicht: 7 Spalten ---- */
+.kal-woche {
+  flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 1px; background: var(--line);
+}
+.kal-wtag { background: var(--surface); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.kal-wtag.is-vorbei { background: color-mix(in srgb, var(--surface) 70%, var(--bg)); }
+.kal-wtag.is-vorbei .kal-wtag-liste { opacity: .65; }
+.kal-wtag-kopf {
+  font: inherit; color: var(--fg); background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 8px 10px; position: sticky; top: 0;
+  background: inherit; z-index: 1;
+}
+.kal-wtag-kopf:hover .kal-wtag-nr { color: var(--acc); }
+.kal-wtag-name { font-weight: 700; font-size: 13px; }
+.kal-wtag-nr { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.kal-wtag.is-heute .kal-wtag-kopf { box-shadow: inset 0 -2px 0 var(--acc); }
+.kal-wtag.is-heute .kal-wtag-name, .kal-wtag.is-heute .kal-wtag-nr { color: var(--acc); }
+.kal-wtag-liste { display: grid; gap: 5px; padding: 8px 6px 16px; align-content: start; }
+.kal-leer { color: var(--muted); font-size: 12px; text-align: center; opacity: .5; }
+
+/* ---- Tagesansicht ---- */
+.kal-tag { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: 8px; align-content: start; padding: 20px; max-width: 860px; width: 100%; box-sizing: border-box; margin: 0 auto; }
+
+/* Monatsansicht: Klick auf den Tag öffnet die Tagesansicht */
+.stu-day:hover { background: color-mix(in srgb, var(--acc) 6%, var(--surface)); }
+
+@media (max-width: 760px) {
+  .kal-kopf { padding: 10px 12px 8px; }
+  .kal-titel { font-size: 16px; flex-basis: 100%; }
+  .kal-woche { grid-template-columns: 1fr; gap: 0; align-content: start; grid-auto-rows: auto; }
+  .kal-wtag { border-bottom: 1px solid var(--line); min-height: auto; }
+  .kal-wtag-kopf { position: static; }
+  .kal-wtag-liste { padding: 6px 10px 12px; }
+  .kal-termin.is-kompakt { flex-direction: row; gap: 8px; }
+  .kal-termin.is-kompakt .kal-termin-zeit { min-width: 38px; }
+  .kal-tag { padding: 12px; }
+  .kal-termin.is-gross { flex-direction: column; gap: 4px; }
 }

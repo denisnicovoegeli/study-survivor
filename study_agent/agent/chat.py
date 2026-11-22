@@ -57,6 +57,38 @@ def _current_turn(messages: list[AnyMessage]) -> list[AnyMessage]:
 
 
 MAX_HISTORY_TOKENS = 6000  # Budget für den Verlauf in `answer` (trim_messages, SW8)
+MAX_TOOL_ROUNDS = 4        # danach antwortet `answer` ohne Tools mit dem, was gefunden wurde
+GENUG_GESUCHT = (
+    "Du hast jetzt genug gesucht. Ruf keine Tools mehr auf und antworte mit dem, was die bisherigen "
+    "Tool-Ergebnisse hergeben. Steht die gesuchte Information nicht darin, sag klar, dass sie im "
+    "Kursmaterial und in den Terminen nicht vorkommt, und nenne, was du stattdessen gefunden hast.")
+
+
+TOOL_MAX_ZEICHEN = 12000   # ein Tool-Ergebnis (z. B. datei_lesen) im Prompt höchstens so lang
+
+
+def verlauf_fuer_answer(messages: list[AnyMessage]) -> list[AnyMessage]:
+    """Laufende Frage mit allen Tool-Ergebnissen immer vollständig, älterer Verlauf auf das Budget gekürzt.
+
+    Früher lief der ganze Verlauf durch trim_messages(start_on="human"). Wurde die laufende Runde
+    grösser als das Budget, fiel auch die Frage weg, das Modell sah nur noch den System-Prompt,
+    suchte erneut, und das Ergebnis wurde wieder weggeschnitten: eine endlose Tool-Schleife.
+    """
+    turn = _current_turn(messages)
+    frueher = messages[:len(messages) - len(turn)]
+    alt = trim_messages(frueher, max_tokens=MAX_HISTORY_TOKENS, token_counter="approximate",
+                        strategy="last", start_on="human", allow_partial=False) if frueher else []
+    gekuerzt = []
+    for m in turn:
+        if isinstance(m, ToolMessage) and isinstance(m.content, str) and len(m.content) > TOOL_MAX_ZEICHEN:
+            m = m.model_copy(update={"content": m.content[:TOOL_MAX_ZEICHEN] + "\n[… gekürzt]"})
+        gekuerzt.append(m)
+    return [*alt, *gekuerzt]
+
+
+def tool_runden(messages: list[AnyMessage]) -> int:
+    """Wie oft das Modell in der laufenden Runde schon Tools aufgerufen hat."""
+    return sum(1 for m in _current_turn(messages) if isinstance(m, AIMessage) and m.tool_calls)
 
 
 def _previous_round(messages: list[AnyMessage]) -> list[AnyMessage]:
@@ -146,10 +178,13 @@ def build_chat_graph(tools, model: str = MAIN_MODEL, checkpointer=None, store=No
                       f"\n- Bevorzugte Sprache: {p.get('sprache')}")
         system = prompts.SYSTEM_PROMPT.format(
             heute=datetime.now(TZ).strftime("%A, %d.%m.%Y"), profil=profil, zusammenfassung=_summary_block(state))
-        # Verlauf kürzen; start_on="human", damit kein Tool-Ergebnis ohne seinen Tool-Call übrig bleibt
-        verlauf = trim_messages(state["messages"], max_tokens=MAX_HISTORY_TOKENS, token_counter="approximate",
-                                strategy="last", start_on="human", allow_partial=False)
-        msg = await llm_tools.ainvoke([SystemMessage(system), *verlauf])
+        verlauf = verlauf_fuer_answer(state["messages"])
+        if tool_runden(state["messages"]) >= MAX_TOOL_ROUNDS:
+            # Schleifenschutz: gleiche Suche immer wieder ohne neues Ergebnis. Ohne gebundene Tools
+            # kann das Modell nur noch antworten.
+            msg = await llm.ainvoke([SystemMessage(system), *verlauf, SystemMessage(GENUG_GESUCHT)])
+        else:
+            msg = await llm_tools.ainvoke([SystemMessage(system), *verlauf])
         return {"messages": [msg]}
 
     async def respond(state: ChatState):

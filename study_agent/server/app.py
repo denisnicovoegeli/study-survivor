@@ -11,6 +11,7 @@ from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from langgraph.errors import GraphRecursionError
 
 from study_agent.config import REPO_DIR
 
@@ -79,6 +80,9 @@ async def chat(payload: dict = Body(...)):
             yield _sse("final", {"thread_id": thread, "category": state.get("category"),
                                  "in_scope": state.get("in_scope"), "tools_used": state.get("tools_used") or [],
                                  **(state.get("response") or {})})
+        except GraphRecursionError:
+            yield _sse("error", {"message": "Der Agent hat zu viele Schritte gebraucht und abgebrochen. "
+                                            "Formuliere die Frage enger oder frag in einem neuen Chat."})
         except Exception as exc:  # Fehler als Event, damit das Frontend etwas anzeigen kann
             yield _sse("error", {"message": f"{type(exc).__name__}: {exc}"})
 

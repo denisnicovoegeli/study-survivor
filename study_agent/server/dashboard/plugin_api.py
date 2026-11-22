@@ -281,10 +281,13 @@ def overview_data(days: int = 14) -> dict:
     return {"deadlines": deadlines, "termine": termine, "pending": pending, "new_files": new_files}
 
 
-def calendar_events(days: int = 120) -> list:
-    """Zusammengeführte Deadlines (Moodle) und Termine (termine/*.yaml)."""
-    deadlines, termine = _parallel(("deadlines", "--days", str(days), "--json"),
-                                   ("termine", "--days", str(days), "--json"))
+def calendar_events(days: int = 120, vergangen: int = 0) -> list:
+    """Zusammengeführte Deadlines (Moodle) und Termine (termine/*.yaml).
+
+    vergangen: auch Termine der letzten Tage (nur termine/*.yaml; Moodle liefert nur kommende Fristen).
+    """
+    termine_args = ("termine", "--days", str(days), "--json") + (("--vergangen", str(vergangen)) if vergangen else ())
+    deadlines, termine = _parallel(("deadlines", "--days", str(days), "--json"), termine_args)
     _plugin_imports()
     from study_agent.server.dashboard.routes_calendar import merge_calendar_events
     return merge_calendar_events(deadlines, termine)
@@ -392,22 +395,24 @@ def _lernen_dir() -> Path:
 
 
 def kurse_listing() -> list:
+    """Kurse mit Lernartefakten (lernen/<Kurs>/) plus eigene Module, auch wenn noch leer."""
+    from study_agent.pipeline.module import QUELLE_EIGENE, QUELLE_MOODLE, eigene_module
     lernen = _lernen_dir()
-    if not lernen.is_dir():
-        return []
+    eigene = eigene_module(data_dir())
+    ordner = {p.name: p for p in lernen.iterdir() if p.is_dir()} if lernen.is_dir() else {}
     out = []
-    for course_dir in sorted(lernen.iterdir()):
-        if not course_dir.is_dir():
-            continue
+    for name in sorted(set(ordner) | set(eigene)):
+        course_dir = ordner.get(name, lernen / name)
         sections = []
-        for section_dir in sorted(course_dir.iterdir()):
+        for section_dir in sorted(course_dir.iterdir()) if course_dir.is_dir() else []:
             if not section_dir.is_dir():
                 continue
             files = sorted(f.name for f in section_dir.glob("*.md"))
             if files:
                 sections.append({"name": section_dir.name, "files": files})
         out.append({
-            "name": course_dir.name,
+            "name": name,
+            "quelle": QUELLE_EIGENE if name in eigene else QUELLE_MOODLE,
             "sections": sections,
             "begriffe": (course_dir / "begriffe.md").exists(),
             "projekt": (course_dir / "projekt.md").exists(),
@@ -871,8 +876,8 @@ def _make_router():
         }
 
     @router.get("/calendar")
-    def get_calendar(days: int = Query(120, ge=1, le=400)):
-        return {"events": calendar_events(days=days), "days": days}
+    def get_calendar(days: int = Query(120, ge=1, le=400), vergangen: int = Query(0, ge=0, le=400)):
+        return {"events": calendar_events(days=days, vergangen=vergangen), "days": days, "vergangen": vergangen}
 
     @router.get("/calendar.ics")
     def get_ics():
@@ -974,6 +979,15 @@ def _make_router():
 
     from study_agent.server.dashboard.routes_modul import register_routes as register_modul_routes
     register_modul_routes(router, get_settings, cached_study, calendar_events)
+
+    from study_agent.server.dashboard.routes_agent import register_routes as register_agent_routes
+    register_agent_routes(router, get_settings, cache_invalidate)
+
+    from study_agent.server.dashboard.routes_studium import register_routes as register_studium_routes
+    register_studium_routes(router, get_settings, cached_study, calendar_events, cache_invalidate)
+
+    from study_agent.server.dashboard.routes_moodle import register_routes as register_moodle_routes
+    register_moodle_routes(router, get_settings, cached_study, cache_invalidate)
 
     return router
 

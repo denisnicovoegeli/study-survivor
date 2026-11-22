@@ -34,6 +34,7 @@ class ConvertReport:
     converted: list[str] = field(default_factory=list)
     skipped: int = 0
     failed: list[tuple[str, str]] = field(default_factory=list)
+    ocr: list[str] = field(default_factory=list)  # per Texterkennung gelesen
 
 
 def markitdown_converter() -> Converter:
@@ -104,7 +105,9 @@ def _convert_one(src: Path, office: Converter, pdf_reader: PdfReader) -> tuple[s
 
 def convert_tree(src_root: Path, dst_root: Path, office: Converter, pdf_reader: PdfReader = extract_pages, *,
                  force: bool = False, course_filter: str | None = None, courses: set[str] | None = None,
-                 meta: dict[str, FileMeta] | None = None) -> ConvertReport:
+                 meta: dict[str, FileMeta] | None = None, ocr: PdfReader | None = None,
+                 ocr_limit: int = 0) -> ConvertReport:
+    """ocr: Leser für gescannte PDFs (Vision-Modell), höchstens ocr_limit Dateien pro Aufruf."""
     dst_root.mkdir(parents=True, exist_ok=True)
     manifest = load_manifest(dst_root)
     meta = meta or {}
@@ -123,14 +126,29 @@ def convert_tree(src_root: Path, dst_root: Path, office: Converter, pdf_reader: 
         except Exception as exc:  # Konverter-Bibliotheken werfen viele verschiedene Fehler
             report.failed.append((key, f"{type(exc).__name__}: {exc}"[:200]))
             continue
+        per_ocr = False
+        if not text.strip() and src.suffix.lower() == ".pdf" and ocr is not None and len(report.ocr) < ocr_limit:
+            try:
+                pages = ocr(src)
+                text = render_pages(pages) if any(p.text.strip() for p in pages) else ""
+                per_ocr = bool(text.strip())
+            except Exception as exc:  # Netz, Proxy, Modell: Datei bleibt für den nächsten Lauf offen
+                report.failed.append((key, f"Texterkennung: {type(exc).__name__}: {exc}"[:200]))
+                continue
         if not text.strip():
-            report.failed.append((key, "kein Text extrahiert (gescannt?)"))
+            grund = "kein Text extrahiert (gescannt?)"
+            if src.suffix.lower() == ".pdf" and ocr is not None:
+                grund += " · Texterkennung: " + ("ohne Ergebnis" if len(report.ocr) < ocr_limit
+                                                  else "nicht in diesem Lauf")
+            report.failed.append((key, grund))
             continue
         info = meta.get(key, FileMeta())
         if rel.parts[0] == EIGENE_DIR:
             header = [f"<!-- source: {src} -->", "<!-- quelle: eigene -->"]
         else:
             header = [f"<!-- source: {src} -->"] + ([f"<!-- moodle: {info.moodle_link} -->"] if info.moodle_link else [])
+        if per_ocr:
+            header.append("<!-- texterkennung: vision -->")
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_text("\n".join(header) + f"\n# {src.name}\n\n{text.rstrip()}\n")
         manifest[key] = {
@@ -138,9 +156,11 @@ def convert_tree(src_root: Path, dst_root: Path, office: Converter, pdf_reader: 
             "klasse": classify(src.name, info.module_name, src.suffix.lower(), pages),
             "seiten": len(pages) if pages is not None else (len(_PAGE_HEADING.findall(text)) or None),
             "visuell": [p.number for p in pages if p.visual] if pages else [],
-        }
+        } | ({"ocr": True} if per_ocr else {})
         (dst_root / MANIFEST).write_text(json.dumps(manifest, ensure_ascii=False, indent=1))
         report.converted.append(key)
+        if per_ocr:
+            report.ocr.append(key)
     return report
 
 

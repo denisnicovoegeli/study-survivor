@@ -122,7 +122,7 @@ export function courseShort(course) {
   return (course || "")
     .replace(/^[\d-]+[A-Z]*\.?[\w.-]*⧸\S+\s*/, "")
     .replace(/^\d+HS\s|\s\d+H\d$|\s(BAI|HS|FS)\b.*$/g, "")
-    .slice(0, 28);
+    .slice(0, 34);
 }
 
 /**

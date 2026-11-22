@@ -366,3 +366,18 @@
     text-align: left;
   }
 }
+
+/* Leistungsnachweis: wichtige Daten und Herkunft */
+.mv-daten { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.mv-daten li { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; font-size: 13.5px; }
+.mv-daten li.is-vergangen { opacity: .55; }
+.mv-daten-tag { font-weight: 600; font-variant-numeric: tabular-nums; }
+.mv-daten-texte { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.mv-art { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 99px; background: var(--line); color: var(--muted); }
+.mv-art.is-pruefung { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.mv-art.is-abgabe { background: var(--acc-soft); color: var(--acc); }
+.mv-quellen { font-size: 12.5px; color: var(--muted); }
+.mv-quellen summary { cursor: pointer; }
+.mv-quellen ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+.mv-quelle-datei { color: var(--fg); overflow-wrap: anywhere; }
+@media (max-width: 640px) { .mv-daten li { grid-template-columns: 1fr; gap: 2px; } }

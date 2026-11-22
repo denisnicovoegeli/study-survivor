@@ -7,7 +7,6 @@ import { Loading } from "../ui/Loading.jsx";
 import {
   searchTree,
   resolveFileInTree,
-  courseHue,
   courseShort,
 } from "./utils.js";
 import { renderMarkdown } from "../lib/markdown.js";
@@ -24,6 +23,7 @@ export function Search() {
     tree,
     courses,
     course: defaultCourse,
+    modulFarbe,
   } = useStudio();
 
   // Eingabefeld fokussiert beim Oeffnen
@@ -320,7 +320,7 @@ export function Search() {
                         <span
                           className="stu-bdg"
                           style={{
-                            background: `hsl(${courseHue(h.kurs)} 70% 50% / 0.15)`,
+                            background: `color-mix(in srgb, ${modulFarbe(h.kurs)} 16%, transparent)`,
                             color: "var(--fg)",
                             fontWeight: 600,
                             padding: "2px 8px",

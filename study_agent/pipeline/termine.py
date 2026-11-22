@@ -1,4 +1,7 @@
+import re
+from dataclasses import replace
 from datetime import date, datetime, time, timedelta, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -67,9 +70,69 @@ def load_termine(termine_dir: Path) -> tuple[list[Deadline], list[str]]:
     return events, errors
 
 
-def upcoming_termine(events: list[Deadline], now: datetime, days: int) -> list[Deadline]:
-    end = now + timedelta(days=days)
-    return sorted((e for e in events if now <= e.due <= end), key=lambda e: e.due)
+# Reihenfolge, nach der beim Zusammenführen die Art gewählt wird (wichtigste zuerst)
+WICHTIGKEIT = ("ausfall", "pruefung", "abgabe", "praesentation", "praesenz", "meilenstein", "termin", "lektion")
+_TEILE = re.compile(r"\s*[;,:–—]\s*|\s+-\s+")
+_REST = re.compile(r"\s*[;–—]\s*|\s+-\s+")
+_FUELLWOERTER = frozenset({"und", "der", "die", "das", "des", "den", "von", "vor", "mit", "im", "in", "am", "an",
+                           "eines", "einer", "ein", "eine", "für", "zu", "zum", "zur"})
+
+
+def _kern(titel: str) -> str:
+    """Titel bis zum ersten Trenner, vereinheitlicht («&» = «und»)."""
+    t = titel.translate(_FULLWIDTH).casefold().replace("&", "und")
+    return re.sub(r"\s+", " ", _TEILE.split(t, maxsplit=1)[0]).strip()
+
+
+def _woerter(text: str) -> set[str]:
+    return set(re.findall(r"\w+", text.casefold().replace("&", "und"))) - _FUELLWOERTER
+
+
+def gleicher_termin(a: Deadline, b: Deadline) -> bool:
+    """Gleiches Modul, gleicher Zeitpunkt und gleicher Kern im Titel (z. B. aus Semesterprogramm und Plan)."""
+    if _norm(a.course) != _norm(b.course) or a.due != b.due or a.all_day != b.all_day:
+        return False
+    ka, kb = _kern(a.name), _kern(b.name)
+    return bool(ka) and (ka == kb or SequenceMatcher(None, ka, kb).ratio() >= 0.85)
+
+
+def _verbinden(a: Deadline, b: Deadline) -> Deadline:
+    lang, kurz = (a, b) if len(a.name) >= len(b.name) else (b, a)
+    # Teile des kürzeren Titels, die etwas Neues sagen (z. B. «Gruppen 4 und 9»), hinten anhängen
+    bekannt = _woerter(lang.name)
+    rest = _TEILE.split(kurz.name, maxsplit=1)[1:]  # alles nach dem Kern
+    teile = _REST.split(rest[0]) if rest else []     # Kommas bleiben drin («Gruppen 1, 2 und 5»)
+    extra = [t for t in teile if t.strip() and not _woerter(t) <= bekannt]
+    name = lang.name + "".join(f" · {t.strip()}" for t in extra)
+    art = min((a.kind, b.kind), key=lambda k: WICHTIGKEIT.index(k) if k in WICHTIGKEIT else len(WICHTIGKEIT))
+    quellen = []
+    for q in (a.source, b.source):
+        for teil in q.split("; "):
+            if teil and teil not in quellen:
+                quellen.append(teil)
+    return replace(lang, name=name, kind=art, source="; ".join(quellen), titel_original=lang.titel_original or lang.name)
+
+
+def zusammenfuehren(events: list[Deadline]) -> list[Deadline]:
+    """Doppelte Termine aus verschiedenen Quellen zu einem Eintrag verbinden."""
+    out: list[Deadline] = []
+    gruppen: dict[tuple, list[int]] = {}
+    for e in sorted(events, key=lambda e: e.due):
+        key = (_norm(e.course), e.due, e.all_day)
+        for i in gruppen.get(key, []):
+            if gleicher_termin(out[i], e):
+                out[i] = _verbinden(out[i], e)
+                break
+        else:
+            gruppen.setdefault(key, []).append(len(out))
+            out.append(e)
+    return out
+
+
+def upcoming_termine(events: list[Deadline], now: datetime, days: int, vergangen: int = 0) -> list[Deadline]:
+    """Termine von `vergangen` Tagen zurück bis `days` Tage voraus (Kalender zeigt auch vergangene Tage)."""
+    start, end = now - timedelta(days=vergangen), now + timedelta(days=days)
+    return sorted((e for e in events if start <= e.due <= end), key=lambda e: e.due)
 
 
 def merge_deadlines(moodle: list[Deadline], local: list[Deadline]) -> list[Deadline]:
