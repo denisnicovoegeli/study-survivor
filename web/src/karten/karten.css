@@ -1,0 +1,450 @@
+/* karten.css: Styling fuer die Leitner-Karteikartenansicht */
+
+.stu-karten {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Kopfzeile mit Kurs, Fächer-Zählern und Filtern */
+.stu-karten-h {
+  padding: 24px 36px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stu-karten-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stu-karten-title-row h1 {
+  font: 600 28px/1.2 "Newsreader", Georgia, serif;
+  margin: 0;
+}
+
+.stu-karten-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Leitner-Fächer (3 Fächer) */
+.stu-leitner-boxes {
+  display: flex;
+  background: var(--raise);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.stu-leitner-box-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.12s ease;
+}
+
+.stu-leitner-box-btn:hover {
+  color: var(--fg);
+}
+
+.stu-leitner-box-btn.is-on {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stu-leitner-count {
+  font: 700 10.5px "IBM Plex Mono", monospace;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--raise);
+  color: var(--muted);
+}
+
+.stu-leitner-box-btn.is-on .stu-leitner-count {
+  background: var(--acc-soft);
+  color: var(--acc);
+}
+
+/* Filter (Woche / Quelldatei) */
+.stu-karten-filter-select {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+  outline: none;
+}
+
+.stu-karten-filter-select:focus {
+  border-color: var(--acc);
+}
+
+/* Hauptbereich: Karteikarte zentriert */
+.stu-karten-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 48px;
+  min-height: 0;
+}
+
+.stu-card-wrap {
+  width: 100%;
+  max-width: 640px;
+  perspective: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Karte als echte 3D-Karteikarte mit Mindesthöhe und Animation */
+.stu-card {
+  width: 100%;
+  height: 360px;
+  min-height: 320px;
+  position: relative;
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 14px;
+}
+
+.stu-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.stu-card.is-flipped .stu-card-inner {
+  transform: rotateY(180deg);
+}
+
+.stu-card-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  background: var(--paper);
+  color: var(--paper-fg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 28px 32px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stu-card:hover .stu-card-face {
+  border-color: var(--muted);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 5px rgba(0, 0, 0, 0.06);
+}
+
+.stu-card-front {
+  transform: rotateY(0deg);
+}
+
+.stu-card-back {
+  transform: rotateY(180deg);
+}
+
+.stu-card-side-tag {
+  font: 700 11px "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--acc);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stu-card-box-indicator {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* Zentrierter Begriff auf Vorderseite */
+.stu-card-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 8px;
+}
+
+.stu-card-term {
+  font: 600 28px/1.3 "Newsreader", Georgia, serif;
+  color: var(--paper-fg);
+  margin: 0;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Rückseite mit Definition und Quellen */
+.stu-card-back-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 8px 0;
+  margin: 4px 0;
+}
+
+.stu-card-definition {
+  font: 16px/1.65 "Manrope", sans-serif;
+  color: var(--paper-fg);
+  margin: 0;
+  white-space: pre-line;
+}
+
+.stu-card-sources {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+}
+
+.stu-card-sources-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.stu-card-source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stu-card-folie-link {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--raise);
+  font: 600 11px "IBM Plex Mono", monospace;
+  color: var(--acc);
+  border: 1px solid var(--line);
+  transition: all 0.12s ease;
+  line-height: 1.3;
+}
+
+.stu-card-folie-link:hover {
+  background: var(--acc-soft);
+  border-color: var(--acc);
+}
+
+.stu-card-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  text-align: center;
+  flex: none;
+}
+
+/* Aktionen (Gewusst / Nicht gewusst) */
+.stu-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.stu-btn-answer {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.12s ease;
+  min-width: 140px;
+  box-sizing: border-box;
+}
+
+.stu-btn-answer.is-no {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--warn);
+}
+
+.stu-btn-answer.is-no:hover {
+  background: rgba(201, 130, 27, 0.1);
+  border-color: var(--warn);
+}
+
+.stu-btn-answer.is-yes {
+  background: var(--ok);
+  color: #ffffff;
+  border: 1px solid var(--ok);
+}
+
+.stu-btn-answer.is-yes:hover {
+  opacity: 0.92;
+}
+
+.stu-card-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.stu-card-nav button {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.stu-card-nav button:hover:not(:disabled) {
+  background: var(--raise);
+  color: var(--fg);
+}
+
+.stu-card-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stu-karten-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 20px;
+}
+
+.stu-karten-empty h3 {
+  font-size: 18px;
+  color: var(--fg);
+  margin-bottom: 8px;
+}
+
+@media (max-width: 760px) {
+  .stu-karten-h {
+    padding: 16px 14px 12px;
+  }
+  .stu-karten-body {
+    padding: 16px 12px 30px;
+  }
+  .stu-card {
+    height: 330px;
+    min-height: 280px;
+  }
+  .stu-card-face {
+    padding: 20px 18px;
+  }
+  .stu-card-term {
+    font-size: 22px;
+  }
+  .stu-card-definition {
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+  .stu-card-actions {
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+  }
+  .stu-btn-answer {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 400px) {
+  .stu-card {
+    height: 320px;
+    min-height: 260px;
+  }
+  .stu-card-face {
+    padding: 16px 14px;
+  }
+  .stu-card-term {
+    font-size: 20px;
+  }
+  .stu-card-definition {
+    font-size: 13.5px;
+  }
+}
+
+/* Karteikarten erstellen */
+.ke { width: 100%; max-width: 760px; margin: 0 auto; display: grid; gap: 12px; align-content: start; }
+.ke-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ke-kopf h2 { margin: 0; font-size: 18px; }
+.ke-text { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.ke-schnell { display: flex; gap: 6px; flex-wrap: wrap; }
+.ke-liste { display: grid; gap: 10px; }
+.ke-gruppe { margin: 0; padding: 8px 12px 10px; border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 2px; min-width: 0; }
+.ke-gruppe legend { font-size: 12px; font-weight: 600; color: var(--muted); padding: 0 4px; overflow-wrap: anywhere; }
+.ke-dok {
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 8px; align-items: center;
+  padding: 5px 0; cursor: pointer;
+}
+.ke-dok input { width: 16px; height: 16px; accent-color: var(--acc); }
+.ke-dok-name { font-size: 13.5px; overflow-wrap: anywhere; }
+.ke-dok-meta { grid-column: 2; font-size: 12px; color: var(--muted); }
+.ke-fuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--bg); padding: 10px 0; border-top: 1px solid var(--line); }
+.ke-anzahl { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ke-anzahl select { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 4px 6px; }
+.ke-lauf { display: grid; gap: 8px; font-size: 13.5px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; }
+.ke-balken { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.ke-balken span { display: block; height: 100%; background: var(--acc); transition: width .4s; }
+.ke-fehler { margin: 0; padding-left: 18px; font-size: 12px; color: var(--warn); }
+/* Langer Inhalt (Erstellen-Panel) wächst nach unten, statt zentriert nach oben über die Kopfzeile zu laufen */
+.stu-karten-body { justify-content: safe center; flex: 1 0 auto; }
+.stu-karten-body:has(.ke) { justify-content: flex-start; }

@@ -1,0 +1,693 @@
+/* doc.css: Stile fuer Dokumentbereich, Tabs, Editor, Vorschau, PDF-Spalte und Versionen */
+
+.stu-docarea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--surface);
+  position: relative;
+}
+
+/* Tab-Leiste */
+.stu-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--topbar-h, 42px);
+  min-height: var(--topbar-h, 42px);
+  max-height: var(--topbar-h, 42px);
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  box-sizing: border-box;
+  flex: none;
+}
+
+.stu-tabs .stu-icbtn {
+  margin-bottom: 0;
+}
+
+.stu-tablist {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  gap: 2px;
+  scrollbar-width: thin;
+}
+
+.stu-tablist::-webkit-scrollbar {
+  height: 3px;
+}
+
+.stu-tablist::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+
+.stu-tab {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 8px 8px 0 0;
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 12.5px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.stu-tab:hover {
+  color: var(--fg);
+  background: var(--raise);
+}
+
+.stu-tab.is-on {
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  box-shadow: 0 -2px 0 var(--acc) inset;
+}
+
+.stu-tab-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stu-dirty {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+  margin-left: 8px;
+  flex: none;
+}
+
+.stu-tab-close {
+  all: unset;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 4px;
+  margin-left: 6px;
+  color: var(--muted);
+  opacity: 0.65;
+  transition: opacity 0.1s ease, background 0.1s ease, color 0.1s ease;
+}
+
+.stu-tab-close:hover {
+  opacity: 1;
+  background: var(--raise);
+  color: var(--fg);
+}
+
+.stu-tab-close .stu-ic {
+  width: 12px;
+  height: 12px;
+}
+
+/* Arbeitsflaeche und Pane-Aufteilung */
+.stu-panes {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.stu-panes.has-pdf {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.stu-panes.has-pdf.is-editing {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+}
+
+/* PDF-Spalte */
+.stu-pdf {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  background: var(--raise);
+  overflow: hidden;
+}
+
+/* Markdown-Bereich */
+.stu-md {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--surface);
+  position: relative;
+}
+
+/* Pane-Kopfzeile */
+.stu-paneh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  min-height: 40px;
+  background: var(--surface);
+  flex: none;
+  overflow: hidden;
+}
+
+.stu-paneh-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stu-paneh-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
+}
+
+/* Werkzeug-Knopfe */
+.stu-tbtn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  user-select: none;
+  transition: color 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+}
+
+.stu-tbtn .stu-ic {
+  width: 14px;
+  height: 14px;
+}
+
+.stu-tbtn:hover {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
+.stu-tbtn.is-on {
+  color: var(--acc);
+  border-color: var(--acc);
+  background: var(--acc-soft);
+}
+
+.stu-tbtn.is-pri {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: var(--acc);
+}
+
+.stu-tbtn.is-pri:hover {
+  filter: brightness(1.08);
+}
+
+.stu-tbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Markdown-Body (Editor und Vorschau) */
+.stu-mdbody {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.stu-panes.is-editing .stu-mdbody {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.stu-mdbody > * {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* CodeMirror-Container */
+.stu-src {
+  width: 100%;
+  height: 100%;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.stu-src .cm-editor {
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  font: 12.5px/1.7 "IBM Plex Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.stu-src .cm-scroller {
+  position: relative;
+  overflow: auto;
+  padding: 14px 16px 60px;
+}
+
+.stu-src .cm-gutters {
+  background: var(--side);
+  color: var(--muted);
+  border-right: 1px solid var(--line);
+}
+
+.stu-src .cm-cursor {
+  border-left-color: var(--fg);
+}
+
+.stu-src .cm-activeLine {
+  background: var(--raise);
+}
+
+/* Vorschau */
+.stu-doc {
+  position: relative;
+  overflow: auto;
+  padding: 22px 30px 60px;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.stu-doc > * {
+  max-width: 72ch;
+}
+
+.stu-doc h1 {
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  text-wrap: balance;
+  color: var(--fg);
+}
+
+.stu-doc h2 {
+  font-size: 15px;
+  margin: 24px 0 8px;
+  color: var(--acc);
+  font-weight: 700;
+}
+
+.stu-doc h3 {
+  font-size: 13.5px;
+  margin: 18px 0 6px;
+  font-weight: 700;
+}
+
+.stu-doc p {
+  margin: 8px 0;
+}
+
+.stu-doc ul,
+.stu-doc ol {
+  padding-left: 20px;
+  margin: 8px 0;
+  display: grid;
+  gap: 5px;
+}
+
+.stu-doc blockquote {
+  margin: 12px 0;
+  padding: 6px 14px;
+  border-left: 3px solid var(--acc);
+  background: var(--raise);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+}
+
+.stu-doc hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 20px 0;
+}
+
+.stu-doc table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 14px 0;
+  font-size: 12.5px;
+}
+
+.stu-doc th,
+.stu-doc td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.stu-doc th {
+  background: var(--raise);
+  font-weight: 600;
+}
+
+/* Konfliktleiste bei 409 */
+.stu-conflict-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--warn);
+  color: #1a1506;
+  font-size: 12px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  animation: stu-conflict-in 0.15s ease-out;
+}
+
+@keyframes stu-conflict-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stu-conflict-text {
+  flex: 1;
+}
+
+.stu-conflict-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.stu-conflict-bar .stu-tbtn {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1506;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.stu-conflict-bar .stu-tbtn:hover {
+  background: #ffffff;
+}
+
+.stu-conflict-bar .stu-tbtn.is-pri {
+  background: #1a1506;
+  color: #ffffff;
+  border-color: #1a1506;
+}
+
+/* Versions-Dialog / Panel */
+.stu-versions-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.stu-versions-modal {
+  width: 100%;
+  max-width: 680px;
+  max-height: 85%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.stu-versions-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.stu-versions-h h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.stu-versions-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.stu-versions-list {
+  display: grid;
+  gap: 8px;
+}
+
+.stu-versions-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  gap: 12px;
+}
+
+.stu-versions-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stu-versions-date {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.stu-versions-info {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.stu-versions-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.stu-version-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stu-version-preview-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.stu-version-preview-content {
+  max-height: 380px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Lade-Overlay fuer Hauptbereich */
+.stu-doc-loading-overlay {
+  position: absolute;
+  top: 42px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  opacity: 0.85;
+  z-index: 30;
+  pointer-events: all;
+}
+
+/* Leerer Zustand ohne offene Tabs */
+.stu-doc-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+  gap: 10px;
+  background: var(--surface);
+  user-select: none;
+}
+
+.stu-doc-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--raise);
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.stu-doc-empty-icon .stu-ic {
+  width: 26px;
+  height: 26px;
+}
+
+.stu-doc-empty h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.stu-doc-empty p {
+  margin: 0;
+  font-size: 13px;
+  max-width: 36ch;
+  line-height: 1.5;
+}
+
+/* Nicht-Markdown Medien und Downloads */
+.stu-doc-media {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+  background: var(--bg);
+}
+
+.stu-doc-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  background: #ffffff;
+}
+
+.stu-doc-download {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 14px;
+  text-align: center;
+  background: var(--surface);
+}
+
+.stu-doc-download-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stu-doc-download-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.stu-doc-download-path {
+  font-size: 12px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+/* Mobil-Layout (Handy <= 760px) */
+@media (max-width: 760px) {
+  .stu-panes.has-pdf {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 38%) minmax(0, 1fr) !important;
+  }
+
+  .stu-panes.has-pdf.is-editing {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 38%) minmax(0, 1fr) !important;
+  }
+
+  .stu-panes.is-editing .stu-mdbody {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .stu-pdf {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stu-src {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stu-doc {
+    padding: 16px 16px 40px;
+  }
+
+  .stu-tbtn span {
+    display: none;
+  }
+
+  .stu-tbtn {
+    padding: 4px 7px;
+  }
+
+  .stu-versions-modal {
+    max-height: 92%;
+    margin: 8px;
+  }
+}

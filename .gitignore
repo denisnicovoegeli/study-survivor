@@ -1,0 +1,15 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+data/
+*.sqlite
+*.sqlite-*
+node_modules/
+web/dist/
+logs/
+
+# lokale Startkonfiguration der Vorschau (Claude Code)
+.claude/launch.json

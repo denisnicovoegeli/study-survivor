@@ -1,0 +1,47 @@
+/* chat.css: Chat-Panel des LangGraph-Agenten */
+.cp { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--surface); color: var(--fg); }
+.cp-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); height: var(--topbar-h); box-sizing: border-box; }
+.cp-head select { flex: 1; min-width: 0; background: var(--raise); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 13px; }
+.cp-icon { background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--fg); padding: 3px 6px; cursor: pointer; display: inline-flex; }
+.cp-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.cp-empty { color: var(--muted); font-size: 13px; line-height: 1.5; padding: 12px; border: 1px dashed var(--line); border-radius: 8px; }
+.cp-msg { font-size: 14px; line-height: 1.55; border-radius: 10px; padding: 10px 12px; max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+.cp-user { align-self: flex-end; background: var(--acc); color: var(--acc-ink); white-space: pre-wrap; max-width: 88%; }
+.cp-bot { align-self: stretch; background: var(--raise); }
+.cp-md > :first-child { margin-top: 0; }
+.cp-md > :last-child { margin-bottom: 0; }
+.cp-md p, .cp-md ul, .cp-md ol { margin: 0.4em 0; }
+.cp-md h1, .cp-md h2, .cp-md h3 { font-size: 15px; margin: 0.8em 0 0.3em; }
+.cp-md code { background: var(--math); padding: 0 4px; border-radius: 4px; font-size: 12.5px; }
+.cp-md pre { background: var(--math); padding: 8px; border-radius: 6px; overflow-x: auto; }
+.cp-steps { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.cp-steps span { font-size: 11px; color: var(--muted); background: var(--surface); border-radius: 10px; padding: 1px 8px; }
+.cp-steps span.is-now { color: var(--acc); border: 1px solid var(--acc); }
+.cp-tools { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.cp-tool { font-size: 11px; background: var(--acc-soft); color: var(--acc); border-radius: 10px; padding: 1px 8px; }
+.cp-wait { color: var(--muted); font-style: italic; }
+.cp-error { color: #d0453a; font-size: 13px; margin-top: 6px; }
+.cp-ok { color: var(--ok); font-size: 13px; margin-top: 6px; }
+.cp-quellen { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.cp-quellen-title { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; margin-bottom: 2px; }
+.cp-quellen ul { margin: 0; padding-left: 16px; }
+.cp-meta { margin-top: 6px; font-size: 11px; color: var(--muted); }
+.cp-input { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
+.cp-input textarea { flex: 1; resize: none; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; font-size: 14px; }
+.cp-send { background: var(--acc); color: var(--acc-ink); border: none; border-radius: 8px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; }
+.cp-send:disabled { opacity: 0.45; cursor: default; }
+.cp-freigabe { border: 1px solid var(--warn); border-radius: 10px; padding: 10px 12px; background: color-mix(in srgb, var(--warn) 8%, var(--surface)); font-size: 13px; }
+.cp-freigabe-head { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 4px; }
+.cp-freigabe-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-freigabe-sub { color: var(--muted); margin: 4px 0; }
+.cp-beanstandungen { margin: 4px 0; padding-left: 16px; }
+.cp-beanstandungen li { margin: 3px 0; }
+.cp-art { font-size: 10.5px; text-transform: uppercase; border-radius: 4px; padding: 0 5px; background: var(--raise); }
+.cp-art-termin, .cp-art-zahl { background: color-mix(in srgb, #d0453a 18%, transparent); }
+.cp-art-fehlt { background: color-mix(in srgb, var(--warn) 25%, transparent); }
+.cp-feedback { width: 100%; box-sizing: border-box; margin-top: 6px; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; font: inherit; font-size: 13px; resize: vertical; }
+.cp-freigabe-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.cp-btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+.cp-btn:disabled { opacity: 0.5; cursor: default; }
+.cp-btn-ok { background: var(--ok); color: #fff; border-color: var(--ok); }
+.cp-btn-no { color: #d0453a; border-color: #d0453a; }

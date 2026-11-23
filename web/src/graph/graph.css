@@ -1,0 +1,170 @@
+/* graph.css: Ansicht «LangGraph» */
+
+.lg {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 24px 32px 40px;
+  max-width: 1180px;
+  margin: 0 auto;
+  color: var(--fg);
+  font-family: "Manrope", sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  container-type: inline-size;
+  width: 100%;
+}
+
+.lg-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.lg-head p { margin: 4px 0 0; max-width: 620px; font-size: 13.5px; line-height: 1.5; }
+.lg-title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.lg-h2 { font-size: 17px; font-weight: 700; }
+.lg-h3 { font-size: 14px; font-weight: 700; }
+.lg-muted { color: var(--muted); }
+.lg-small { font-size: 12.5px; line-height: 1.5; margin: 4px 0 10px; }
+.lg-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.lg-sub .lg-muted { font-size: 13px; }
+
+.lg-tabs { display: flex; gap: 2px; background: var(--raise); border-radius: 8px; padding: 3px; }
+.lg-tabs button {
+  border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+}
+.lg-tabs button.is-on { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+
+.lg-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@container (max-width: 820px) { .lg-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.lg-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+  font-size: 13.5px; line-height: 1.55; min-width: 0;
+}
+.lg-card p { margin: 6px 0 10px; }
+.lg-lead { margin-top: 0 !important; }
+.lg-card-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lg-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  margin: 10px 0 4px;
+}
+.lg-hint { margin-top: 10px; font-size: 12.5px; color: var(--acc); }
+.lg-list { margin: 0; padding-left: 18px; }
+.lg-list li { margin: 2px 0; }
+
+.lg-state { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 0; }
+.lg-state dt { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--acc); }
+.lg-state dd { margin: 0; }
+
+.lg-code {
+  display: inline-block; margin-top: 10px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+  color: var(--muted); background: var(--raise); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere;
+}
+.lg-table .lg-code { margin-top: 0; white-space: nowrap; overflow-wrap: normal; }
+
+.lg-badge {
+  font-size: 11px; font-weight: 600; border-radius: 10px; padding: 1px 8px; background: var(--raise); color: var(--muted);
+  white-space: nowrap;
+}
+.lg-badge-acc { background: var(--acc-soft); color: var(--acc); }
+.lg-badge-warn { color: var(--warn); }
+
+/* Diagramm */
+.lg-diagram {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+  min-height: 300px; display: flex; flex-direction: column; justify-content: center; min-width: 0;
+}
+.lg-svg { display: flex; justify-content: center; }
+.lg-svg svg { max-width: 100%; height: auto; max-height: 560px; }
+.lg-svg g.node { cursor: pointer; }
+.lg-svg g.node.is-tech { cursor: default; opacity: 0.75; }
+.lg-svg g.node .label { font-family: "IBM Plex Mono", monospace; }
+.lg-svg g.node rect, .lg-svg g.node path, .lg-svg g.node polygon {
+  transition: fill 0.25s, stroke 0.25s, stroke-width 0.25s;
+}
+.lg-svg g.node:not(.is-tech):hover rect, .lg-svg g.node:not(.is-tech):hover path { stroke: var(--acc) !important; }
+.lg-svg g.node.is-visited rect, .lg-svg g.node.is-visited path { fill: var(--acc-soft) !important; stroke: var(--acc) !important; }
+.lg-svg g.node.is-selected rect, .lg-svg g.node.is-selected path { stroke: var(--acc) !important; stroke-width: 2.5px !important; }
+.lg-svg g.node.is-active rect, .lg-svg g.node.is-active path {
+  fill: var(--acc) !important; stroke: var(--acc) !important; stroke-width: 2px !important;
+  filter: drop-shadow(0 0 6px var(--acc));
+}
+.lg-svg g.node.is-active .label, .lg-svg g.node.is-active .label * { color: var(--acc-ink) !important; fill: var(--acc-ink) !important; }
+
+/* Knoten-Karte */
+.lg-node-name { font-family: "IBM Plex Mono", monospace; font-weight: 700; font-size: 15px; color: var(--acc); }
+.lg-x {
+  margin-left: auto; border: 0; background: none; color: var(--muted); font-size: 18px; line-height: 1;
+  cursor: pointer; padding: 0 4px;
+}
+.lg-rw { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lg-field {
+  display: inline-block; margin: 0 4px 4px 0; font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 6px;
+}
+.lg-field-w { border-color: var(--acc); color: var(--acc); }
+
+/* Live-Ablauf */
+.lg-thread { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; margin-left: auto; }
+.lg-btn {
+  border: 0; border-radius: 7px; background: var(--acc); color: var(--acc-ink); font: inherit; font-size: 13px;
+  font-weight: 600; padding: 6px 14px; cursor: pointer; white-space: nowrap;
+}
+.lg-btn:disabled { opacity: 0.55; cursor: default; }
+.lg-btn-ghost { background: none; color: var(--fg); border: 1px solid var(--line); padding: 3px 10px; font-size: 12px; }
+.lg-ask { display: flex; gap: 8px; }
+.lg-ask input {
+  flex: 1; min-width: 0; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 7px;
+  padding: 6px 10px; font: inherit; font-size: 14px;
+}
+.lg-examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.lg-chip {
+  border: 1px solid var(--line); background: var(--raise); color: var(--fg); border-radius: 14px; font: inherit;
+  font-size: 12px; padding: 3px 10px; cursor: pointer; text-align: left;
+}
+.lg-chip:hover:not(:disabled) { border-color: var(--acc); color: var(--acc); }
+.lg-chip:disabled { opacity: 0.55; cursor: default; }
+
+.lg-steps { list-style: none; counter-reset: s; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lg-steps li {
+  counter-increment: s; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+  padding: 6px 10px; border-radius: 7px; background: var(--bg);
+}
+.lg-steps li::before { content: counter(s); font-size: 11px; font-weight: 700; color: var(--muted); width: 14px; }
+.lg-steps li.is-now { outline: 1px solid var(--acc); }
+.lg-step-node { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--acc); min-width: 82px; }
+.lg-step-label { flex: 1; }
+.lg-step-ms { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); }
+.lg-step-tools { flex-basis: 100%; padding-left: 24px; display: flex; flex-direction: column; gap: 2px; }
+.lg-tool { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+
+.lg-result { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.lg-result-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 6px; }
+.lg-md > :first-child { margin-top: 0; }
+.lg-md > :last-child { margin-bottom: 0; }
+.lg-md code { background: var(--math); padding: 0 4px; border-radius: 4px; font-size: 12.5px; }
+.lg-quellen ul { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); }
+
+/* Freigaben */
+.lg-freigaben { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lg-freigaben li { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+.lg-file { font-family: "IBM Plex Mono", monospace; font-size: 12px; overflow-wrap: anywhere; }
+
+/* Kursbausteine */
+.lg-bausteine { display: flex; flex-direction: column; gap: 16px; min-width: 0; overflow-x: auto; }
+.lg-table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.45; }
+.lg-table th {
+  text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  padding: 6px 10px; border-bottom: 1px solid var(--line);
+}
+.lg-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+
+.lg-error { color: #d0453a; font-size: 13px; }
+
+.is-mobile .lg { padding: 16px; }
+@media (max-width: 640px) {
+  .lg-table thead { display: none; }
+  .lg-table tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .lg-table td { display: block; border: 0; padding: 2px 0; }
+  .lg-rw { grid-template-columns: 1fr; }
+}

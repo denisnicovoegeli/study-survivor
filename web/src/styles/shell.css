@@ -1,0 +1,587 @@
+/* shell.css: Grundlayout, Rail, einklappbare Panels und Mobilansicht */
+
+.stu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* dvh: Hoehe ohne die ein- und ausfahrende Browser-Leiste (iOS Safari, Android Chrome) */
+  height: 100vh;
+  height: 100dvh;
+  z-index: 60;
+  display: flex;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13.5px/1.55 "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.stu *,
+.stu *::before,
+.stu *::after {
+  box-sizing: border-box;
+}
+
+.stu button {
+  font: inherit;
+  color: inherit;
+}
+
+.stu code {
+  color: inherit;
+  font: 0.9em "IBM Plex Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  background: var(--raise);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.stu-math {
+  font: 0.92em "IBM Plex Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  background: var(--math);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.stu-ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.stu-grow {
+  flex: 1;
+}
+
+.stu-muted {
+  color: var(--muted);
+}
+
+.stu-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 12px 8px 4px;
+  letter-spacing: 0.02em;
+}
+
+.stu-icbtn {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  color: var(--muted);
+}
+
+.stu-icbtn:hover,
+.stu-icbtn.is-on {
+  background: var(--raise);
+  color: var(--fg);
+}
+
+.stu-seg {
+  display: flex;
+  background: var(--raise);
+  border-radius: 8px;
+  padding: 2px;
+  flex: none;
+}
+
+.stu-seg button {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex: none;
+}
+
+.stu-seg button.is-on {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.stu button:focus-visible,
+.stu-row:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 1px;
+}
+
+/* Dateityp-Abzeichen */
+.stu-bdg {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 16px;
+  padding: 0 3px;
+  margin-right: 7px;
+  border-radius: 4px;
+  font: 600 9px/1 "IBM Plex Mono", monospace;
+  letter-spacing: 0.03em;
+  background: var(--raise);
+  color: var(--muted);
+  flex: none;
+}
+
+.stu-bdg-pdf { background: #fde3df; color: #b23a2b; }
+.stu-bdg-md { background: #dff0f3; color: #1f7787; }
+.stu-bdg-ipynb { background: #fbedd2; color: #9a6510; }
+.stu-bdg-docx { background: #e0e8fb; color: #3557b0; }
+
+.stu-dark .stu-bdg-pdf { background: #4a2626; color: #ffb4a8; }
+.stu-dark .stu-bdg-md { background: #1f3d44; color: #8fe0ec; }
+.stu-dark .stu-bdg-ipynb { background: #43351a; color: #f2c879; }
+.stu-dark .stu-bdg-docx { background: #23345a; color: #9fbcff; }
+
+/* Rail (vertikale Werkzeugleiste links) */
+.stu-rail {
+  width: 68px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0;
+  background: var(--side);
+  border-right: 1px solid var(--line);
+  user-select: none;
+  overflow-y: auto;
+}
+
+.stu-rail button {
+  all: unset;
+  cursor: pointer;
+  width: 58px;
+  min-height: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 9px;
+  color: var(--muted);
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.stu-rail-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.stu-rail button:hover {
+  background: var(--raise);
+  color: var(--fg);
+}
+
+.stu-rail button:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+.stu-rail button.is-on {
+  background: var(--acc-soft);
+  color: var(--acc);
+}
+
+.stu-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font: 800 13px "Manrope", sans-serif;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.stu-sep {
+  width: 22px;
+  height: 1px;
+  background: var(--line);
+  margin: 6px 0;
+  flex: none;
+}
+
+/* Linkes Panel: Explorer oder Sessions */
+.stu-left {
+  width: 272px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--side);
+  border-right: 1px solid var(--line);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stu-left-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-h, 42px);
+  min-height: var(--topbar-h, 42px);
+  max-height: var(--topbar-h, 42px);
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  box-sizing: border-box;
+  flex: none;
+}
+
+.stu-left-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hauptflaeche in der Mitte */
+.stu-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Rechtes Panel: Hermes Chat */
+.stu-chat {
+  width: 392px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stu-chat.is-hidden {
+  display: none !important;
+}
+
+/* Verstellbare Leisten: Resizer-Ziehgriff */
+.stu-resizer {
+  width: 6px;
+  flex: none;
+  cursor: col-resize;
+  position: relative;
+  z-index: 20;
+  user-select: none;
+  touch-action: none;
+  margin-left: -3px;
+  margin-right: -3px;
+}
+
+.stu-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.stu-resizer:hover::after,
+.stu-resizer.is-dragging::after {
+  background: var(--acc);
+}
+
+.stu.is-mobile .stu-resizer {
+  display: none !important;
+}
+
+/* Folien-Links */
+.stu-flink {
+  color: var(--acc);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stu-flink:hover {
+  text-decoration-style: solid;
+}
+
+/* Toast-Meldung unten zentriert */
+.stu-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  z-index: 300;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: stu-toast-in 0.15s ease-out;
+}
+
+@keyframes stu-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Ladeindikator */
+.stu-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stu-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: stu-spin 0.8s linear infinite;
+  flex: none;
+}
+
+@keyframes stu-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Platzhalter fuer noch nicht implementierte Module */
+.stu-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+  gap: 8px;
+  min-height: 0;
+  background: var(--surface);
+}
+
+.stu-placeholder h2,
+.stu-placeholder h3 {
+  margin: 0;
+  color: var(--fg);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Mobil-Layout (<= 760px) */
+.stu.is-mobile {
+  flex-direction: column;
+}
+
+.stu.is-mobile .stu-left,
+.stu.is-mobile .stu-chat,
+.stu.is-mobile .stu-main {
+  width: 100%;
+  flex: 1;
+  border: 0;
+  min-height: 0;
+}
+
+.stu-bottom {
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--side);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  flex: none;
+  user-select: none;
+}
+
+.stu-bottom button {
+  all: unset;
+  cursor: pointer;
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 7px 0 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 0.1s ease;
+}
+
+.stu-bottom button.is-on {
+  color: var(--acc);
+}
+
+.stu.is-mobile .stu-toast {
+  bottom: calc(65px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Zwischenbreiten: Dateien und Chat als Overlay ueber der Mitte */
+.stu-left.is-overlay,
+.stu-chat.is-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 45;
+  max-width: calc(100vw - 72px);
+  box-shadow: var(--shadow);
+}
+
+.stu-left.is-overlay {
+  left: 52px;
+}
+
+.stu-chat.is-overlay {
+  right: 0;
+}
+
+.stu-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 44;
+  background: rgba(10, 10, 15, 0.25);
+}
+
+/* Mobil: Menue "Mehr" ueber der unteren Leiste */
+.stu-moremenu-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  background: rgba(10, 10, 15, 0.35);
+  display: flex;
+  align-items: flex-end;
+}
+
+.stu-moremenu {
+  width: 100%;
+  background: var(--side);
+  border-top: 1px solid var(--line);
+  border-radius: 14px 14px 0 0;
+  padding: 10px 10px calc(62px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  box-shadow: var(--shadow);
+}
+
+.stu-moremenu button {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg);
+  text-align: center;
+}
+
+.stu-moremenu button:hover,
+.stu-moremenu button.is-on {
+  background: var(--acc-soft);
+  color: var(--acc);
+}
+
+/* Fehleranzeige der Error Boundary */
+.stu-errbox {
+  margin: 24px auto;
+  max-width: 520px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 3px solid #c0392b;
+  border-radius: 9px;
+  background: var(--card, var(--bg));
+  color: var(--fg);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.stu-errbox-t {
+  font-weight: 700;
+}
+
+.stu-errbox-m {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.stu-errbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Bereich «Lernen»: Umschalter über Lesemodus, Karteikarten und Suche */
+.stu-lernen-tabs {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--side);
+}
+
+.stu-lernen-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Aktives Modul im Bereich «Lernen» */
+.stu-modul-leiste {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 100%;
+}
+.stu-modul-leiste-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.stu-modul-leiste-hinweis { font-size: 12px; color: var(--muted); }
+.stu-modul-leiste-hinweis:empty { display: none; }
+.stu-modul-pill {
+  font: inherit; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 99px; cursor: pointer; max-width: 100%;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stu-modul-pill:hover { border-color: var(--mc); }
+.stu-modul-pill:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.stu-modul-pill.is-on {
+  font-weight: 700; border-color: var(--mc);
+  background: color-mix(in srgb, var(--mc) 16%, transparent);
+}
+.stu-modul-punkt { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--mc); }

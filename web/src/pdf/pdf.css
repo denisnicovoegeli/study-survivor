@@ -1,0 +1,339 @@
+/* pdf.css: Stildefinitionen fuer den PDF-Viewer (PdfView) */
+
+.stu-pdf {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border-right: 1px solid var(--line);
+  background: var(--raise);
+  container-type: inline-size;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Kopfzeile mit Dateiname, Foliennummer und Zoom */
+.stu-pdf .stu-paneh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  min-height: 40px;
+  background: var(--surface);
+  flex: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.stu-pdf .stu-paneh button {
+  all: unset;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--raise);
+  color: var(--fg);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  flex: none;
+  transition: background 0.1s ease;
+}
+
+.stu-pdf .stu-paneh button:hover:not(:disabled) {
+  background: var(--line);
+}
+
+.stu-pdf .stu-paneh button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stu-pdf-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.stu-pdf-zoom-val {
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Scrollbereich */
+.stu-pdfscroll {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  /* Links ausrichten und per margin zentrieren: bei Zoom > 100 % bleibt die Folie
+     vollstaendig erreichbar (center schob sie links aus dem Scrollbereich) */
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 0;
+  background: var(--raise);
+  position: relative;
+}
+
+/* Einzelne Folie / PDF-Seite */
+.stu-slide {
+  position: relative;
+  margin-inline: auto;
+  max-width: 100%;
+  background: var(--slide);
+  color: var(--fg);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  overflow: hidden;
+  flex: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stu-slide.is-on {
+  border-color: var(--acc);
+}
+
+.stu-slide-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+.stu-slide-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--slide);
+}
+
+/* Lade- und Fehleranzeige */
+.stu-pdf-loading,
+.stu-pdf-error,
+.stu-pdf-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--surface);
+  min-height: 0;
+}
+
+.stu-pdf-error {
+  color: var(--warn);
+}
+
+.stu-pdf-error-text {
+  margin: 0;
+  font-size: 13px;
+  max-width: 320px;
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+.stu-pdf-retry-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--raise);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.1s ease;
+}
+
+.stu-pdf-retry-btn:hover {
+  background: var(--line);
+}
+
+/* Handy-Ansicht (<= 760 px): Horizontales Wischen mit Scroll-Snap */
+.stu.is-mobile .stu-pdf {
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.stu.is-mobile .stu-pdfscroll {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 86%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  padding: 12px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.stu.is-mobile .stu-slide {
+  scroll-snap-align: center;
+  width: 100%;
+  height: auto;
+}
+
+.stu.is-mobile .stu-pdf-title {
+  max-width: 120px;
+}
+
+@media (max-width: 760px) {
+  .stu-pdf {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stu-pdfscroll {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 86%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    padding: 12px;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .stu-slide {
+    scroll-snap-align: center;
+    width: 100%;
+    height: auto;
+  }
+
+  .stu-pdf-title {
+    max-width: 120px;
+  }
+}
+
+/* Container-Query fuer sehr schmale Spalten */
+@container (max-width: 380px) {
+  .stu-pdf-title {
+    max-width: 90px;
+  }
+}
+
+/* Textebene (aus pdfjs-dist 6.4.299 web/pdf_viewer.css, .textLayer, entschachtelt).
+   Spans sind transparent ueber dem Canvas, damit sich Text markieren und kopieren laesst. */
+.stu-slide .textLayer {
+  color-scheme: only light;
+  position: absolute;
+  text-align: initial;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 0;
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.stu-slide .textLayer span,
+.stu-slide .textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.stu-slide .textLayer > :not(.markedContent),
+.stu-slide .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.stu-slide .textLayer .markedContent {
+  display: contents;
+}
+
+.stu-slide .textLayer span[role="img"] {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+.stu-slide .textLayer ::selection {
+  background: rgba(0, 0, 255, 0.25);
+  background: color-mix(in srgb, AccentColor, transparent 50%);
+  color: transparent;
+}
+
+.stu-slide .textLayer br::selection {
+  background: transparent;
+}
+
+.stu-slide .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stu-slide .textLayer.selecting .endOfContent {
+  top: 0;
+}
+
+/* Links aus den PDF-Annotationen */
+.stu-pdf-links {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stu-pdf-link {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.stu-pdf-link:hover {
+  background: rgba(0, 90, 255, 0.15);
+}
